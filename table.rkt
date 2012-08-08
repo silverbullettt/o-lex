@@ -3,6 +3,7 @@
 (provide make-table)
 
 (define (make-table . n)
+  ; a table with arbitrary dimentions
   (let ((dim (if (null? n) 1 (car n)))
         (table (make-hash)))
     
@@ -22,7 +23,7 @@
           (lookup-iter keys table)))
     
     (define (insert-iter! key-list value table)
-      (if (= (length key-list) 1) 
+      (if (= (length key-list) 1)
           (begin (hash-ref! table (car key-list) value)
                  'ok)
           (let ((key (car key-list)))
