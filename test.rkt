@@ -22,3 +22,13 @@
 (test NFA "abbbb")
 (test NFA "abbaabb")
 (test NFA "")
+
+(define tb (t 'table))
+(define (list-iter key n table)
+  (if (= n 1)
+      (cons key v)
+      (map (λ (kv) (cons key kv)) (list-iter key (- n 1) (hash-ref table key)))))
+
+(append (hash-map tb
+                    (λ (k v)
+                      (cons k (list-iter k 1 v)))))
