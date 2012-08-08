@@ -1,0 +1,1 @@
+("5.2.1" ("4d606925d7f0f3ddd3a4b19c829b726ffb803485" . "3cbbc34b5124ffdcd3fba31fa30d61b95bb21005") (collects #"racket" #"main.rkt") (collects #"errortrace" #"errortrace-key.rkt") #"D:\\lexical_parser\\table.rkt" (collects #"racket" #"lang" #"reader.rkt"))

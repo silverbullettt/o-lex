@@ -2,7 +2,16 @@
 
 (require "table.rkt")
 
-(provide make-nfa)
+(provide make-nfa make-trans)
+
+(define (make-trans . tuples)
+  (let ((table (make-table 2)))
+    (begin
+      (map (λ (tuple)
+             ((table 'insert!)
+              (car tuple) (cadr tuple) (caddr tuple)))
+           tuples)
+      table)))
 
 (define (make-nfa Q Σ Δ q0 F)
   ; Q -> set of states
