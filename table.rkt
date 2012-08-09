@@ -41,15 +41,8 @@
        (last keys-and-value) ; value
        table))
     (define (insert-list! keys-and-value)
-      ((check-params-and-do keys-and-value #f insert-iter! 'insert!)
-       (take keys-and-value dim) ; key-list
-       (last keys-and-value) ; value
-       table))
+      (apply insert! keys-and-value))
     
-    (define (list-all)
-      ; return a list contains all members of table
-      (table->list table))
-
     (define (dispatch m)
       (case m
         ['lookup lookup]
@@ -57,7 +50,6 @@
         ['insert-list! insert-list!]
         ['table table]
         ['dim dim]
-        ['list (list-all)]
         [else (error 'dispatch "Unknown message ~a~%" m)]))
     dispatch))
 
@@ -81,7 +73,7 @@
 
 (define (list->table l . dim)
   (let* ((d (if (null? dim) 1 (car dim)))
-         (t (make-table)))
+         (t (make-table d)))
     (begin
       (for-each (lambda (kv-list) ((t 'insert-list!) kv-list)) l)
       t)))
