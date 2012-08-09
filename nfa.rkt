@@ -53,11 +53,12 @@
   (define (dispatch m)
     (case m
       ['recog recognize]
-      ['s Q]
+      ['S Q]
       ['alphabet Σ]
       ['T Δ]
       ['init q0]
-      ['F F]))
+      ['F F]
+      [else (error 'dispatch "Unknown message ~a~%" m)]))
   dispatch)
 
 (define (make-empty-nfa . q0)
@@ -94,3 +95,27 @@
                     ((t 'insert!) s #\ε new-next)))
                 F)
       (make-nfa (nfa 'Q) (nfa 'alphabet) t init F))))
+
+(define (solve-state-collide A B)
+  ; compose a new state machine, which isomorphism with B
+  ; but all states in new machine will not interact with A
+  ; Note: all states in NFA are integers
+  (let* ((new-Q (range (+ (apply max (A 'S)) 1)
+                       (+ (+ (apply max (A 'S)) 1) (length (B 'S)))))
+         (state-map (make-hash (map cons (B 'S) new-Q)))
+         (t (make-trans)))
+    (define (convert old-state)
+      (hash-ref state-map old-state #f))
+    
+    (begin
+      (for-each (lambda (kv)
+                  (let ((old-curr (caar kv))
+                        (old-next (cdr kv)) ; next is a set of states!
+                        (sym (cadar kv)))
+                    ((t 'insert!) (convert old-curr) sym (map convert old-next))))
+                (table->list (B 'T)))
+      (make-nfa new-Q
+                (B 'alphabet)
+                t
+                (hash-ref state-map (B 'init))
+                (map convert (B 'F))))))
