@@ -1,11 +1,21 @@
 #lang racket
 
-(provide make-table table->list)
+(provide make-table table->list list->table)
 
 (define (make-table . n)
   ; a table with arbitrary dimentions
   (let ((dim (if (null? n) 1 (car n)))
         (table (make-hash)))
+    
+    (define (check-params-and-do params only-keys? proc proc-name)
+      ; check whether the number of params is right
+      (let ((params-num (if only-keys? dim (+ dim 1)))
+            (err-msg (if only-keys?
+                         "illegal number of keys, given: ~a, excepted: ~a~%"
+                         "illegal number of keys and value, given: ~a, excepted: ~a~%")))
+        (if (not (= (length params) params-num))
+            (error proc-name err-msg (length params) params-num)
+            proc)))
     
     (define (lookup-iter key-list table)
       (let ((value (hash-ref table (car key-list) #f)))
@@ -13,12 +23,7 @@
               (value (lookup-iter (cdr key-list) value))
               (else #f))))
     (define (lookup . keys)
-      (if (not (= (length keys) dim))
-          (error 'lookup 
-                 "illegal number of keys, given: ~a, excepted: ~a~%"
-                 (length keys)
-                 dim)
-          (lookup-iter keys table)))
+      ((check-params-and-do keys #t lookup-iter 'lookup) keys table))
     
     (define (insert-iter! key-list value table)
       (if (= (length key-list) 1)
@@ -31,24 +36,25 @@
                   (hash-set! table key (make-hash))
                   (insert-iter! (cdr key-list) value (hash-ref table key)))))))
     (define (insert! . keys-and-value)
-      (if (not (= (length keys-and-value) (+ dim 1)))
-          (error 'insert! 
-                 "illegal number of keys and value, given: ~a, excepted: ~a~%"
-                 (length keys-and-value)
-                 (+ dim 1))
-          (insert-iter! (take keys-and-value dim) ; key-list
-                        (last keys-and-value) ; value
-                        table)))
+      ((check-params-and-do keys-and-value #f insert-iter! 'insert!)
+       (take keys-and-value dim) ; key-list
+       (last keys-and-value) ; value
+       table))
+    (define (insert-list! keys-and-value)
+      ((check-params-and-do keys-and-value #f insert-iter! 'insert!)
+       (take keys-and-value dim) ; key-list
+       (last keys-and-value) ; value
+       table))
     
-    (define (list-all) #f)
+    (define (list-all)
       ; return a list contains all members of table
-      ; each key-value pair is presented by (k1 k2 ... kn v)
-      
-      
+      (table->list table))
+
     (define (dispatch m)
       (case m
         ['lookup lookup]
         ['insert! insert!]
+        ['insert-list! insert-list!]
         ['table table]
         ['dim dim]
         ['list (list-all)]
@@ -72,3 +78,10 @@
                      (lambda (k v)
                        (convert-iter k '() d v)))
            l)))
+
+(define (list->table l . dim)
+  (let* ((d (if (null? dim) 1 (car dim)))
+         (t (make-table)))
+    (begin
+      (for-each (lambda (kv-list) ((t 'insert-list!) kv-list)) l)
+      t)))
