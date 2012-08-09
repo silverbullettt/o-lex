@@ -1,6 +1,6 @@
 #lang racket
 
-(provide range accumulate)
+(provide range accumulate union-append)
 
 (define (accumulate op initial seq)
   (if (null? seq)
@@ -31,3 +31,6 @@
     ['2 (check-and-iter (first params) (second params) 1)]
     ['3 (check-and-iter (first params) (second params) (third params))]
     [else (error "range: params must be (range end) or (range start end [step])")]))
+
+(define (union-append . lists)
+  (remove-duplicates (accumulate append '() lists)))
