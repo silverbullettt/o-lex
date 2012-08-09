@@ -1,9 +1,8 @@
 #lang racket
 
-(require "table.rkt")
-(require "utility.rkt")
+(require "table.rkt" "utility.rkt")
 (provide make-trans make-nfa make-empty-nfa make-plain-nfa
-         star-closure)
+         star-closure nfa-union nfa-concate)
 
 (define (make-trans . tuples)
   (let ((table (make-table 2)))
@@ -58,20 +57,19 @@
       ['T Δ]
       ['init q0]
       ['F F]
-      [else (error 'dispatch "Unknown message ~a~%" m)]))
+      [else (error 'NFA-dispatch "Unknown message ~a~%" m)]))
   dispatch)
 
-(define (make-empty-nfa . q0)
+(define (make-empty-nfa)
   ; make a NFA that can recognize empty string
-  (let ((q (if (null? q0) 0 (car q0))))
-    (make-nfa q '() (make-trans) q (list q))))
+  (make-nfa 0 '() (make-trans) 0 (list )))
 
 (define (make-plain-nfa word)
   ; make a NFA which can recognize the word
   ; the states of result are presented by 0~length
   (if (= (string-length word) 0)
       (make-empty-nfa)
-      (let ((Q (range (string-length word)))
+      (let ((Q (range (+ (string-length word) 1)))
             (alphabet (remove-duplicates (string->list word)))
             (t (make-table 2))
             (init 0)
@@ -119,3 +117,49 @@
                 t
                 (hash-ref state-map (B 'init))
                 (map convert (B 'F))))))
+
+(define (nfa-union N1 N2)
+  ; union two NFAs
+  ; add a new init state, and set ε-moves to the NFAs initial states
+  (let* ((new-N2 (solve-state-collide N1 N2)) ; 
+         (new-init (+ (max (apply max (N1 'S))
+                           (apply max (new-N2 'S)))
+                      1))
+         (new-S (cons new-init (append (N1 'S) (new-N2 'S))))
+         (new-alphabet (union-append (N1 'alphabet) (new-N2 'alphabet)))
+         (new-t (new-N2 'T))
+         (new-F (append (N1 'F) (new-N2 'F))))
+    (begin
+      (for-each (lambda (kv)
+                  (let ((curr (caar kv))
+                        (next (cdr kv)) ; next is a set of states!
+                        (sym (cadar kv)))
+                    ((new-t 'insert!) curr sym next)))
+                (table->list (N1 'T)))
+      ; add ε-moves
+      ((new-t 'insert!) new-init #\ε (list (N1 'init) (new-N2 'init)))
+      (make-nfa new-S new-alphabet new-t new-init new-F))))
+
+(define (nfa-concate N1 N2)
+  ; concate two NFAs
+  (let* ((new-N2 (solve-state-collide N1 N2))
+         (new-S (append (N1 'S) (new-N2 'S)))
+         (new-t (new-N2 'T))
+         (new-alphabet (union-append (N1 'alphabet) (new-N2 'alphabet)))
+         (new-init (N1 'init))
+         (new-F (new-N2 'F)))
+    (begin
+      (for-each (lambda (kv)
+                  (let ((curr (caar kv))
+                        (next (cdr kv)) ; next is a set of states!
+                        (sym (cadar kv)))
+                    ((new-t 'insert!) curr sym next)))
+                (table->list (N1 'T)))
+      ; add ε-moves from final states of N1 to initial state of N2
+      (for-each (lambda (fs) ; final states of N1
+                  ((new-t 'insert!) fs #\ε (cons (new-N2 'init)
+                                                 (if (((N1 'T) 'lookup) fs #\ε)
+                                                     (((N1 'T) 'lookup) fs #\ε)
+                                                     '()))))
+                (N1 'F))
+      (make-nfa new-S new-alphabet new-t new-init new-F))))
