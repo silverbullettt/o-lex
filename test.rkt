@@ -3,7 +3,7 @@
 (require "table.rkt" "nfa.rkt")
 
 (define (test nfa str)
-  (printf "\"~a\" -> ~a~%" str (nfa str)))
+  (printf "\"~a\" -> ~a~%" str ((nfa 'recog) str)))
 
 (define t
   (make-trans '(0 #\a (1))
@@ -23,12 +23,14 @@
 (test NFA "abbaabb")
 (test NFA "")
 
-(define tb (t 'table))
-(define (list-iter key n table)
-  (if (= n 1)
-      (cons key v)
-      (map (λ (kv) (cons key kv)) (list-iter key (- n 1) (hash-ref table key)))))
-
-(append (hash-map tb
-                    (λ (k v)
-                      (cons k (list-iter k 1 v)))))
+(define N1 (make-plain-nfa "wocao"))
+(define N2 (make-plain-nfa "fuck"))
+(define N3 (make-plain-nfa "shit"))
+(define N4 (nfa-union N1 N2 N3))
+((N4 'recog) "wocao")
+((N4 'recog) "fuck")
+((N4 'recog) "shit")
+(table->list (N4 'T))
+(N4 'init)
+(N4 'F)
+((N4 'recog) "other")
