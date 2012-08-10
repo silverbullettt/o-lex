@@ -163,4 +163,3 @@
 
 (define (nfa-concate . NFAs)
   (accumulate nfa-concate-2 (make-empty-nfa) NFAs))
-
