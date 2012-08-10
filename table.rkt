@@ -1,6 +1,7 @@
 #lang racket
 
-(provide make-table table->list list->table)
+(provide make-table table->list list->table
+         table-copy table-union! table-union)
 
 (define (make-table . n)
   ; a table with arbitrary dimentions
@@ -8,7 +9,7 @@
         (table (make-hash)))
     
     (define (check-params-and-do params only-keys? proc proc-name)
-      ; check whether the number of params is right
+      ; check whether the number of params is correct
       (let ((params-num (if only-keys? dim (+ dim 1)))
             (err-msg (if only-keys?
                          "illegal number of keys, given: ~a, excepted: ~a~%"
@@ -50,7 +51,7 @@
         ['insert-list! insert-list!]
         ['table table]
         ['dim dim]
-        [else (error 'dispatch "Unknown message ~a~%" m)]))
+        [else (error 'TABLE-dispatch "Unknown message ~a~%" m)]))
     dispatch))
 
 (define (table->list t)
@@ -60,8 +61,8 @@
   (let ((l '()) (d (t 'dim)))
     (define (convert-iter key other-keys dim table)
       (if (= dim 1)
-          (set! l (cons (cons (reverse (cons key other-keys))
-                              table)
+          (set! l (cons (append (reverse (cons key other-keys))
+                                (list table))
                         l))
           (hash-map table
                     (lambda (k v)
@@ -77,3 +78,33 @@
     (begin
       (for-each (lambda (kv-list) ((t 'insert-list!) kv-list)) l)
       t)))
+
+(define (table-copy table)
+  (list->table (table->list table) (table 'dim)))
+
+(define (table-union! . tables)
+  ; union all tables to first table, first table would be modified
+  ; if the key(s) of tables without duplicate, it works very well
+  ; or the old value of table would be replaced by new value,
+  ; where they have the same key(s)
+  ; and of cause, all tables should have same dimention.
+  (case (length tables)
+    ['(0 1) (error "TABLE-UNION! -- union requires at least 2 tables!")]
+    [else
+     (let ((result (car tables))
+           (other-tables (cdr tables)))
+       (begin
+         (for-each
+          (lambda (t) (for-each (lambda (kv-list)
+                                  ((result 'insert-list!) kv-list))
+                                (table->list t)))
+          other-tables)
+         result))]))
+
+(define (table-union . tables)
+  ; union all tables to a new table
+  (case (length tables)
+    ['(0 1) (error "TABLE-UNION -- union requires at least 2 tables!")]
+    [else
+     (let ((new (make-table ((car tables) 'dim))))
+       (apply table-union! (cons new tables)))]))
