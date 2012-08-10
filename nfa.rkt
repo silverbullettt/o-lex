@@ -30,19 +30,16 @@
         #t))
   (define (ε-span states) 
     ; deal with ε-moves by span the set of states with which it can reach through 'ε'
-    ; (printf "   span states: ~a~%" states)
     (remove-duplicates
      (flatten
       (map (lambda (s) (cons s (next-states s #\ε))) states))))
   (define (recognize-iter curr-states str)
-    ; (printf "states: ~a, str: ~a~%" curr-states str)
     (cond ((null? curr-states) #f)
           ((= (string-length str) 0) (accept? curr-states))
           (else
            (let ((first-sym (string-ref str 0))
                  (rest-sym (substring str 1)))
              (for/or ([s curr-states])
-               ; (printf " for/or s: ~a, curr-states: ~a~%" s curr-states)
                (recognize-iter (ε-span (next-states s first-sym)) rest-sym))))))
   (define (recognize str)
     (if (recognize-iter (ε-span (list q0)) str)
@@ -62,7 +59,7 @@
 
 (define (make-empty-nfa)
   ; make a NFA that can recognize empty string
-  (make-nfa 0 '() (make-trans) 0 (list )))
+  (make-nfa 0 '() (make-trans) 0 '()))
 
 (define (make-plain-nfa word)
   ; make a NFA which can recognize the word
@@ -81,18 +78,22 @@
           (make-nfa Q alphabet t init F)))))
 
 (define (star-closure nfa)
-  (let ((t (nfa 'T))
+  (let ((t (table-copy (nfa 'T)))
         (init (nfa 'init))
         (F (nfa 'F)))
     (begin
-      ((t 'insert!) init #\ε (car F))
+      ; add a ε-moves from initial state to an acceptable state
+      ((t 'insert!) init #\ε
+                    (if ((t 'lookup) init #\ε)
+                        (remove-duplicates (cons (car F) ((t 'lookup) init #\ε)))
+                        (list (car F))))
       (for-each (lambda (s) ; acceptable state
                   (let ((new-next (if ((t 'lookup) s #\ε)
-                                      (cons init ((t 'lookup) s #\ε))
+                                      (remove-duplicates (cons init ((t 'lookup) s #\ε)))
                                       (list init))))
                     ((t 'insert!) s #\ε new-next)))
                 F)
-      (make-nfa (nfa 'Q) (nfa 'alphabet) t init F))))
+      (make-nfa (nfa 'S) (nfa 'alphabet) t init F))))
 
 (define (solve-state-collide A B)
   ; compose a new state machine, which isomorphism with B
@@ -107,9 +108,9 @@
     
     (begin
       (for-each (lambda (kv)
-                  (let ((old-curr (caar kv))
-                        (old-next (cdr kv)) ; next is a set of states!
-                        (sym (cadar kv)))
+                  (let ((old-curr (first kv))
+                        (sym (second kv))
+                        (old-next (third kv))) ; next is a set of states!
                     ((t 'insert!) (convert old-curr) sym (map convert old-next))))
                 (table->list (B 'T)))
       (make-nfa new-Q
@@ -130,12 +131,7 @@
          (new-t (new-N2 'T))
          (new-F (append (N1 'F) (new-N2 'F))))
     (begin
-      (for-each (lambda (kv)
-                  (let ((curr (caar kv))
-                        (next (cdr kv)) ; next is a set of states!
-                        (sym (cadar kv)))
-                    ((new-t 'insert!) curr sym next)))
-                (table->list (N1 'T)))
+      (table-union! new-t (N1 'T))
       ; add ε-moves
       ((new-t 'insert!) new-init #\ε (list (N1 'init) (new-N2 'init)))
       (make-nfa new-S new-alphabet new-t new-init new-F))))
@@ -149,12 +145,7 @@
          (new-init (N1 'init))
          (new-F (new-N2 'F)))
     (begin
-      (for-each (lambda (kv)
-                  (let ((curr (caar kv))
-                        (next (cdr kv)) ; next is a set of states!
-                        (sym (cadar kv)))
-                    ((new-t 'insert!) curr sym next)))
-                (table->list (N1 'T)))
+      (table-union! new-t (N1 'T))
       ; add ε-moves from final states of N1 to initial state of N2
       (for-each (lambda (fs) ; final states of N1
                   ((new-t 'insert!) fs #\ε (cons (new-N2 'init)
