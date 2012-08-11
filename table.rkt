@@ -3,9 +3,9 @@
 (provide make-table table->list list->table
          table-copy table-union! table-union)
 
-(define (make-table . n)
+(define (make-table . d)
   ; a table with arbitrary dimentions
-  (let ((dim (if (null? n) 1 (car n)))
+  (let ((dim (if (null? d) 1 (car d)))
         (table (make-hash)))
     
     (define (check-params-and-do params only-keys? proc proc-name)

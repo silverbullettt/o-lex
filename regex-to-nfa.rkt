@@ -13,4 +13,14 @@
 (define upcase-char (char-range #\A #\Z))
 (define all-char (append downcase-char upcase-char))
 
-(define (regexp-to-nfa) '())
+; TODO list:
+; 0. design
+; 1. parse regex
+; 2. meta-character(\d,\c,(,),[,],|,*,+)
+; 3. or(|)
+; 4. duplication(()*,()+)
+; 5. optional([])
+
+; 6. longest matching
+; 7. token type
+(define (regex-to-nfa) '())
