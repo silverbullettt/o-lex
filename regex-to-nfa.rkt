@@ -4,9 +4,8 @@
 (provide regex-to-nfa)
 
 (define (char-range low high)
-  (define (identity x) x)
-  (define (next char) (integer->char (+ (char->integer char) 1)))
-  (range->list identity char>? next low high))
+  (map integer->char (range (char->integer low)
+                            (+ (char->integer high) 1))))
 
 (define digit (char-range #\0 #\9))
 (define downcase-char (char-range #\a #\z))
