@@ -9,13 +9,13 @@
 
 (define (range . params)
   (define (check-params start end step)
-    (cond ((and (positive? step) (< end start))
-           (error "range: step > 0 && start > end"))
-          ((and (negative? step) (> end start))
-           (error "range: step < 0 && start < end"))
-          ((zero? step)
-           (error "range: step cannot be zero!"))
-          (else 'ok)))
+    (cond [(and (positive? step) (< end start))
+           (error "range: step > 0 && start > end")]
+          [(and (negative? step) (> end start))
+           (error "range: step < 0 && start < end")]
+          [(zero? step)
+           (error "range: step cannot be zero!")]
+          [else 'ok]))
   (define (range-iter start end step lst)
     (if (or (and (> step 0) (>= start end))
             (and (< step 0) (<= start end)))

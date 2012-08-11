@@ -7,7 +7,7 @@
 (define ε 'ε) ; use 'ε to present ε, namely empty string
 
 (define (make-trans . tuples)
-  (let ((table (make-table 2)))
+  (let ([table (make-table 2)])
     (begin
       (map (lambda (tuple)
              ((table 'insert!)
@@ -37,13 +37,13 @@
       (map (lambda (s) (cons s (ε-span (next-states s ε)))) ; ε-span should be recursive
            states))))
   (define (recognize-iter curr-states str)
-    (cond ((null? curr-states) #f)
-          ((= (string-length str) 0) (accept? curr-states))
-          (else
-           (let ((first-sym (string-ref str 0))
-                 (rest-sym (substring str 1)))
+    (cond [(null? curr-states) #f]
+          [(= (string-length str) 0) (accept? curr-states)]
+          [else
+           (let ([first-sym (string-ref str 0)]
+                 [rest-sym (substring str 1)])
              (for/or ([s curr-states])
-               (recognize-iter (ε-span (next-states s first-sym)) rest-sym))))))
+               (recognize-iter (ε-span (next-states s first-sym)) rest-sym)))]))
   (define (recognize str)
     (if (recognize-iter (ε-span (list q0)) str)
         'accept
@@ -69,11 +69,11 @@
   ; the states of result are presented by 0~length
   (if (= (string-length word) 0)
       (make-empty-nfa)
-      (let ((Q (range (+ (string-length word) 1)))
-            (alphabet (remove-duplicates (string->list word)))
-            (t (make-table 2))
-            (init 0)
-            (F (list (string-length word))))
+      (let ([Q (range (+ (string-length word) 1))]
+            [alphabet (remove-duplicates (string->list word))]
+            [t (make-table 2)]
+            [init 0]
+            [F (list (string-length word))])
         (begin
           (for-each
            (lambda (s) ((t 'insert!) s (string-ref word s) (list (+ s 1))))
@@ -81,9 +81,9 @@
           (make-nfa Q alphabet t init F)))))
 
 (define (star-closure nfa)
-  (let ((t (table-copy (nfa 'T)))
-        (init (nfa 'init))
-        (F (nfa 'F)))
+  (let ([t (table-copy (nfa 'T))]
+        [init (nfa 'init)]
+        [F (nfa 'F)])
     (begin
       ; add a ε-moves from initial state to an acceptable state
       ((t 'insert!) init ε
@@ -102,18 +102,18 @@
   ; compose a new state machine, which isomorphism with B
   ; but all states in new machine will not interact with A
   ; Note: all states in NFA are integers
-  (let* ((new-Q (range (+ (apply max (A 'S)) 1)
-                       (+ (+ (apply max (A 'S)) 1) (length (B 'S)))))
-         (state-map (make-hash (map cons (B 'S) new-Q)))
-         (t (make-trans)))
+  (let* ([new-Q (range (+ (apply max (A 'S)) 1)
+                       (+ (+ (apply max (A 'S)) 1) (length (B 'S))))]
+         [state-map (make-hash (map cons (B 'S) new-Q))]
+         [t (make-trans)])
     (define (convert old-state)
       (hash-ref state-map old-state #f))
     
     (begin
       (for-each (lambda (kv)
-                  (let ((old-curr (first kv))
-                        (sym (second kv))
-                        (old-next (third kv))) ; next is a set of states!
+                  (let ([old-curr (first kv)]
+                        [sym (second kv)]
+                        [old-next (third kv)]) ; next is a set of states!
                     ((t 'insert!) (convert old-curr) sym (map convert old-next))))
                 (table->list (B 'T)))
       (make-nfa new-Q
@@ -125,14 +125,14 @@
 (define (nfa-union-2 N1 N2)
   ; union two NFAs
   ; add a new init state, and set ε-moves to the NFAs initial states
-  (let* ((new-N2 (solve-state-collide N1 N2)) ; 
-         (new-init (+ (max (apply max (N1 'S))
+  (let* ([new-N2 (solve-state-collide N1 N2)] ; 
+         [new-init (+ (max (apply max (N1 'S))
                            (apply max (new-N2 'S)))
-                      1))
-         (new-S (cons new-init (append (N1 'S) (new-N2 'S))))
-         (new-alphabet (union-append (N1 'alphabet) (new-N2 'alphabet)))
-         (new-t (new-N2 'T))
-         (new-F (append (N1 'F) (new-N2 'F))))
+                      1)]
+         [new-S (cons new-init (append (N1 'S) (new-N2 'S)))]
+         [new-alphabet (union-append (N1 'alphabet) (new-N2 'alphabet))]
+         [new-t (new-N2 'T)]
+         [new-F (append (N1 'F) (new-N2 'F))])
     (begin
       (table-union! new-t (N1 'T))
       ; add ε-moves
@@ -144,12 +144,12 @@
 
 (define (nfa-concate-2 N1 N2)
   ; concate two NFAs
-  (let* ((new-N2 (solve-state-collide N1 N2))
-         (new-S (append (N1 'S) (new-N2 'S)))
-         (new-t (new-N2 'T))
-         (new-alphabet (union-append (N1 'alphabet) (new-N2 'alphabet)))
-         (new-init (N1 'init))
-         (new-F (new-N2 'F)))
+  (let* ([new-N2 (solve-state-collide N1 N2)]
+         [new-S (append (N1 'S) (new-N2 'S))]
+         [new-t (new-N2 'T)]
+         [new-alphabet (union-append (N1 'alphabet) (new-N2 'alphabet))]
+         [new-init (N1 'init)]
+         [new-F (new-N2 'F)])
     (begin
       (table-union! new-t (N1 'T))
       ; add ε-moves from final states of N1 to initial state of N2

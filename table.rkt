@@ -5,24 +5,24 @@
 
 (define (make-table . d)
   ; a table with arbitrary dimentions
-  (let ((dim (if (null? d) 1 (car d)))
-        (table (make-hash)))
+  (let ([dim (if (null? d) 1 (car d))]
+        [table (make-hash)])
     
     (define (check-params-and-do params only-keys? proc proc-name)
       ; check whether the number of params is correct
-      (let ((params-num (if only-keys? dim (+ dim 1)))
-            (err-msg (if only-keys?
+      (let ([params-num (if only-keys? dim (+ dim 1))]
+            [err-msg (if only-keys?
                          "illegal number of keys, given: ~a, excepted: ~a~%"
-                         "illegal number of keys and value, given: ~a, excepted: ~a~%")))
+                         "illegal number of keys and value, given: ~a, excepted: ~a~%")])
         (if (not (= (length params) params-num))
             (error proc-name err-msg (length params) params-num)
             proc)))
     
     (define (lookup-iter key-list table)
-      (let ((value (hash-ref table (car key-list) #f)))
-        (cond ((= (length key-list) 1) value)
-              (value (lookup-iter (cdr key-list) value))
-              (else #f))))
+      (let ([value (hash-ref table (car key-list) #f)])
+        (cond [(= (length key-list) 1) value]
+              [value (lookup-iter (cdr key-list) value)]
+              [else #f])))
     (define (lookup . keys)
       ((check-params-and-do keys #t lookup-iter 'lookup) keys table))
     
@@ -30,7 +30,7 @@
       (if (= (length key-list) 1)
           (begin (hash-ref! table (car key-list) value)
                  'ok)
-          (let ((key (car key-list)))
+          (let ([key (car key-list)])
             (if (hash-has-key? table key)
                 (insert-iter! (cdr key-list) value (hash-ref table key))
                 (begin
@@ -58,7 +58,7 @@
   ; convert a n-dim table to a key-value list
   ; each key-value pair is presented by ((k1 k2 ...) v)
   ; so list looks like (((k1 k2 ...) v) ((k1 k2 ...) v) ((k1 k2 ...) v))
-  (let ((l '()) (d (t 'dim)))
+  (let ([l '()] [d (t 'dim)])
     (define (convert-iter key other-keys dim table)
       (if (= dim 1)
           (set! l (cons (append (reverse (cons key other-keys))
@@ -73,8 +73,8 @@
            l)))
 
 (define (list->table l . dim)
-  (let* ((d (if (null? dim) 1 (car dim)))
-         (t (make-table d)))
+  (let* ([d (if (null? dim) 1 (car dim))]
+         [t (make-table d)])
     (begin
       (for-each (lambda (kv-list) ((t 'insert-list!) kv-list)) l)
       t)))
@@ -91,8 +91,8 @@
   (case (length tables)
     ['(0 1) (error "TABLE-UNION! -- union requires at least 2 tables!")]
     [else
-     (let ((result (car tables))
-           (other-tables (cdr tables)))
+     (let ([result (car tables)]
+           [other-tables (cdr tables)])
        (begin
          (for-each
           (lambda (t) (for-each (lambda (kv-list)
