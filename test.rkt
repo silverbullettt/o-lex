@@ -7,7 +7,7 @@
 
 (define t
   (make-trans '(0 #\a (1))
-              '(0 ε (2))
+              '(0 *ε* (2))
               '(1 #\b (0 1))))
 
 (define NFA (make-nfa
@@ -34,3 +34,7 @@
 (N4 'init)
 (N4 'F)
 ((N4 'recog) "other")
+
+(define N5 (make-plain-nfa "ab"))
+(define N6 (nfa-star-closure N5))
+(define N7 (nfa-positive-closure N5))

@@ -1,6 +1,7 @@
 #lang racket
 
-(provide range accumulate union-append)
+(provide range accumulate union-append
+         string-find-first string-find-last)
 
 (define (accumulate op initial seq)
   (if (null? seq)
@@ -34,3 +35,19 @@
 
 (define (union-append . lists)
   (remove-duplicates (accumulate append '() lists)))
+
+(define (string-find-first str char)
+  (let ([str-len (string-length str)])
+    (define (find-iter k)
+      (cond [(= k str-len) -1]
+            [(char=? (string-ref str k) char) k]
+            [else (find-iter (+ k 1))]))
+    (find-iter 0)))
+
+(define (string-find-last str char)
+  (let ([str-len (string-length str)])
+    (define (find-iter k)
+      (cond [(= k -1) -1]
+            [(char=? (string-ref str k) char) k]
+            [else (find-iter (- k 1))]))
+    (find-iter (- str-len 1))))

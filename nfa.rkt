@@ -1,12 +1,13 @@
 #lang racket
 
 (require "table.rkt" "utility.rkt")
-(provide ε 
+(provide *ε* 
          make-trans 
          make-nfa make-empty-nfa make-ε-nfa make-plain-nfa
-         star-closure nfa-union nfa-concate)
+         nfa-union nfa-concate
+         nfa-star-closure nfa-positive-closure)
 
-(define ε 'ε) ; use 'ε to present ε, namely empty string
+(define *ε* 'ε) ; use 'ε to present ε, namely empty string
 
 (define (make-trans . tuples)
   (let ([table (make-table 2)])
@@ -36,7 +37,7 @@
     ; deal with ε-moves by span the set of states with which it can reach through 'ε'
     (remove-duplicates
      (flatten
-      (map (lambda (s) (cons s (ε-span (next-states s ε)))) ; ε-span should be recursive
+      (map (lambda (s) (cons s (ε-span (next-states s *ε*)))) ; ε-span should be recursive
            states))))
   (define (recognize-iter curr-states str)
     (cond [(null? curr-states) #f]
@@ -45,7 +46,8 @@
            (let ([first-sym (string-ref str 0)]
                  [rest-sym (substring str 1)])
              (for/or ([s curr-states])
-               (recognize-iter (ε-span (next-states s first-sym)) rest-sym)))]))
+               (recognize-iter (ε-span (next-states s first-sym)) ; NOTE: ε-moves cannot be cycle!
+                               rest-sym)))]))
   (define (recognize str)
     (if (recognize-iter (ε-span (list q0)) str)
         'accept
@@ -68,7 +70,7 @@
 
 (define (make-ε-nfa)
   ; make a NFA that can recognize empty string
-  (make-nfa '(0 1) '() (make-trans '(0 ε (1))) 0 '(1)))
+  (make-nfa '(0 1) '() (make-trans (list 0 *ε* '(1))) 0 '(1)))
 
 (define (make-plain-nfa word)
   ; make a NFA which can recognize the word
@@ -85,24 +87,6 @@
            (lambda (s) ((t 'insert!) s (string-ref word s) (list (+ s 1))))
            (range (string-length word)))
           (make-nfa Q alphabet t init F)))))
-
-(define (star-closure nfa)
-  (let ([t (table-copy (nfa 'T))]
-        [init (nfa 'init)]
-        [F (nfa 'F)])
-    (begin
-      ; add a ε-moves from initial state to an acceptable state
-      ((t 'insert!) init ε
-                    (if ((t 'lookup) init ε)
-                        (remove-duplicates (cons (car F) ((t 'lookup) init ε)))
-                        (list (car F))))
-      (for-each (lambda (s) ; acceptable state
-                  (let ((new-next (if ((t 'lookup) s ε)
-                                      (remove-duplicates (cons init ((t 'lookup) s ε)))
-                                      (list init))))
-                    ((t 'insert!) s ε new-next)))
-                F)
-      (make-nfa (nfa 'S) (nfa 'alphabet) t init F))))
 
 (define (solve-state-collide A B)
   ; compose a new state machine, which isomorphism with B
@@ -142,7 +126,7 @@
     (begin
       (table-union! new-t (N1 'T))
       ; add ε-moves
-      ((new-t 'insert!) new-init ε (list (N1 'init) (new-N2 'init)))
+      ((new-t 'insert!) new-init *ε* (list (N1 'init) (new-N2 'init)))
       (make-nfa new-S new-alphabet new-t new-init new-F))))
 
 (define (nfa-union . NFAs)
@@ -160,12 +144,28 @@
       (table-union! new-t (N1 'T))
       ; add ε-moves from final states of N1 to initial state of N2
       (for-each (lambda (fs) ; final states of N1
-                  ((new-t 'insert!) fs ε (cons (new-N2 'init)
-                                                 (if (((N1 'T) 'lookup) fs ε)
-                                                     (((N1 'T) 'lookup) fs ε)
+                  ((new-t 'insert!) fs *ε* (cons (new-N2 'init)
+                                                 (if (((N1 'T) 'lookup) fs *ε*)
+                                                     (((N1 'T) 'lookup) fs *ε*)
                                                      '()))))
                 (N1 'F))
       (make-nfa new-S new-alphabet new-t new-init new-F))))
 
 (define (nfa-concate . NFAs)
   (accumulate nfa-concate-2 (make-empty-nfa) NFAs))
+
+(define (nfa-star-closure nfa)
+  (nfa-union (make-ε-nfa) (nfa-positive-closure nfa)))
+
+(define (nfa-positive-closure nfa)
+    (let ([t (table-copy (nfa 'T))]
+        [init (nfa 'init)]
+        [F (nfa 'F)])
+    (begin
+      (for-each (lambda (s) ; acceptable state
+                  (let ((new-next (if ((t 'lookup) s *ε*)
+                                      (remove-duplicates (cons init ((t 'lookup) s *ε*)))
+                                      (list init))))
+                    ((t 'insert!) s *ε* new-next)))
+                F)
+      (make-nfa (nfa 'S) (nfa 'alphabet) t init F))))
