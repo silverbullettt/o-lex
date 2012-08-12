@@ -1,7 +1,9 @@
 #lang racket
 
 (require "table.rkt" "utility.rkt")
-(provide make-trans make-nfa make-empty-nfa make-plain-nfa
+(provide ε 
+         make-trans 
+         make-nfa make-empty-nfa make-ε-nfa make-plain-nfa
          star-closure nfa-union nfa-concate)
 
 (define ε 'ε) ; use 'ε to present ε, namely empty string
@@ -61,8 +63,12 @@
   dispatch)
 
 (define (make-empty-nfa)
-  ; make a NFA that can recognize empty string
+  ; make a NFA that can not recognize any string
   (make-nfa '(0) '() (make-trans) 0 '()))
+
+(define (make-ε-nfa)
+  ; make a NFA that can recognize empty string
+  (make-nfa '(0 1) '() (make-trans '(0 ε (1))) 0 '(1)))
 
 (define (make-plain-nfa word)
   ; make a NFA which can recognize the word

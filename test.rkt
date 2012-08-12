@@ -7,7 +7,7 @@
 
 (define t
   (make-trans '(0 #\a (1))
-              '(0 #\ε (2))
+              '(0 ε (2))
               '(1 #\b (0 1))))
 
 (define NFA (make-nfa
