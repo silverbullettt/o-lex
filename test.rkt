@@ -1,6 +1,6 @@
 #lang racket
 
-(require "table.rkt" "nfa.rkt")
+(require "table.rkt" "nfa.rkt" "regex-to-nfa.rkt")
 
 (define (test nfa str)
   (printf "\"~a\" -> ~a~%" str ((nfa 'recog) str)))
@@ -26,15 +26,33 @@
 (define N1 (make-plain-nfa "wocao"))
 (define N2 (make-plain-nfa "fuck"))
 (define N3 (make-plain-nfa "shit"))
-(define N4 (nfa-union N1 N2 N3))
-((N4 'recog) "wocao")
-((N4 'recog) "fuck")
-((N4 'recog) "shit")
-(table->list (N4 'T))
-(N4 'init)
-(N4 'F)
+(define N4 (nfa-concate N1 N2 N3))
+((N4 'recog) "wocaofuckshit")
 ((N4 'recog) "other")
 
 (define N5 (make-plain-nfa "ab"))
 (define N6 (nfa-star-closure N5))
 (define N7 (nfa-positive-closure N5))
+
+
+(define a (make-plain-nfa "a"))
+(define b (nfa-star-closure (make-plain-nfa "1")))
+(define c (make-plain-nfa "z"))
+
+
+(regex-parser "cnxkfhasdkhkfd")
+(regex-parser "cnxkfh|asdkhkfd")
+(regex-parser "cnx~~k~~fhasdkhkfd")
+(regex-parser "cnx~~k~~fhasd~ckhkfd")
+(regex-parser "abc[ef]xyz")
+(regex-parser "123(ab)+xyz")
+(regex-parser "123(ab)*xyz")
+
+(define n0 (regex-to-nfa "abc|def|xyz"))
+(define n1 (regex-to-nfa "abc[de]xyz"))
+(define n2 (regex-to-nfa "abc[d|~[e]xyz"))
+(define n3 (regex-to-nfa "a(1)+z"))
+(define n4 (regex-to-nfa "a(1)*z"))
+(table->list (n3 'T))
+(table->list (n4 'T))
+

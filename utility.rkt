@@ -1,7 +1,7 @@
 #lang racket
 
 (provide range accumulate union-append
-         string-find-first string-find-last)
+         string-find-first string-find-last string-empty?)
 
 (define (accumulate op initial seq)
   (if (null? seq)
@@ -51,3 +51,6 @@
             [(char=? (string-ref str k) char) k]
             [else (find-iter (- k 1))]))
     (find-iter (- str-len 1))))
+
+(define (string-empty? str)
+  (= (string-length str) 0))

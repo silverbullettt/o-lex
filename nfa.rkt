@@ -70,7 +70,7 @@
 
 (define (make-ε-nfa)
   ; make a NFA that can recognize empty string
-  (make-nfa '(0 1) '() (make-trans (list 0 *ε* '(1))) 0 '(1)))
+  (make-nfa '(0) '() (make-trans) 0 '(0)))
 
 (define (make-plain-nfa word)
   ; make a NFA which can recognize the word
@@ -112,6 +112,9 @@
                 (hash-ref state-map (B 'init))
                 (map convert (B 'F))))))
 
+(define (nfa-copy nfa)
+  (make-nfa (nfa 'S) (nfa 'alphabet) (table-copy (nfa 'T)) (nfa 'init) (nfa 'F)))
+
 (define (nfa-union-2 N1 N2)
   ; union two NFAs
   ; add a new init state, and set ε-moves to the NFAs initial states
@@ -130,35 +133,36 @@
       (make-nfa new-S new-alphabet new-t new-init new-F))))
 
 (define (nfa-union . NFAs)
-  (accumulate nfa-union-2 (make-empty-nfa) NFAs))
+  (accumulate nfa-union-2 (car NFAs) (cdr NFAs)))
 
 (define (nfa-concate-2 N1 N2)
   ; concate two NFAs
-  (let* ([new-N2 (solve-state-collide N1 N2)]
-         [new-S (append (N1 'S) (new-N2 'S))]
-         [new-t (new-N2 'T)]
-         [new-alphabet (union-append (N1 'alphabet) (new-N2 'alphabet))]
-         [new-init (N1 'init)]
-         [new-F (new-N2 'F)])
-    (begin
-      (table-union! new-t (N1 'T))
-      ; add ε-moves from final states of N1 to initial state of N2
-      (for-each (lambda (fs) ; final states of N1
-                  ((new-t 'insert!) fs *ε* (cons (new-N2 'init)
-                                                 (if (((N1 'T) 'lookup) fs *ε*)
-                                                     (((N1 'T) 'lookup) fs *ε*)
-                                                     '()))))
-                (N1 'F))
-      (make-nfa new-S new-alphabet new-t new-init new-F))))
+  (cond [(null? (table->list (N1 'T))) (nfa-copy N2)]
+        [(null? (table->list (N2 'T))) (nfa-copy N1)]
+        [else
+         (let* ([new-N2 (solve-state-collide N1 N2)]
+                [new-S (append (N1 'S) (new-N2 'S))]
+                [new-t (new-N2 'T)]
+                [new-alphabet (union-append (N1 'alphabet) (new-N2 'alphabet))]
+                [new-init (N1 'init)]
+                [new-F (new-N2 'F)])
+           (begin
+             (table-union! new-t (N1 'T))
+             ; add ε-moves from final states of N1 to initial state of N2
+             (for-each (lambda (fs) ; final states of N1
+                         (let ([new-f (remove-duplicates (cons (new-N2 'init)
+                                                               (if (((N1 'T) 'lookup) fs *ε*)
+                                                                   (((N1 'T) 'lookup) fs *ε*)
+                                                                   '())))])
+                           ((new-t 'insert!) fs *ε* new-f)))
+                       (N1 'F))
+             (make-nfa new-S new-alphabet new-t new-init new-F)))]))
 
 (define (nfa-concate . NFAs)
-  (accumulate nfa-concate-2 (make-empty-nfa) NFAs))
+  (accumulate nfa-concate-2 (make-ε-nfa) NFAs))
 
-(define (nfa-star-closure nfa)
-  (nfa-union (make-ε-nfa) (nfa-positive-closure nfa)))
-
-(define (nfa-positive-closure nfa)
-    (let ([t (table-copy (nfa 'T))]
+(define (nfa-dup nfa type)
+  (let ([t (table-copy (nfa 'T))]
         [init (nfa 'init)]
         [F (nfa 'F)])
     (begin
@@ -168,4 +172,12 @@
                                       (list init))))
                     ((t 'insert!) s *ε* new-next)))
                 F)
-      (make-nfa (nfa 'S) (nfa 'alphabet) t init F))))
+      (make-nfa (nfa 'S) (nfa 'alphabet) t init (match type
+                                                  ['star (cons init F)]
+                                                  ['positive F])))))
+
+(define (nfa-star-closure nfa)
+  (nfa-dup nfa 'star))
+
+(define (nfa-positive-closure nfa)
+  (nfa-dup nfa 'positive))
