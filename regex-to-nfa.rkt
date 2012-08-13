@@ -13,7 +13,7 @@
 ; 8. token type
 
 (require "nfa.rkt" "table.rkt" "utility.rkt")
-(provide regex-parser regex-to-nfa)
+(provide regex-parser regex->nfa)
 
 (define (char-range low high)
   (map integer->char (range (char->integer low)
@@ -122,18 +122,18 @@
                     (parse-iter (string-append bs (string c)) (+ i 1) s)]))))
     (parse-iter "" 0 'in-plain)))
 
-(define (regex-to-nfa regex)
+(define (regex->nfa regex)
   (match (regex-parser regex)
       [(list type before content after)
        (match type
          ['plain (make-plain-nfa content)]
          ['or
           (nfa-union (make-plain-nfa before)
-                     (regex-to-nfa after))]
+                     (regex->nfa after))]
          [else
           (let ([before-nfa (make-plain-nfa before)]
-                [after-nfa (regex-to-nfa after)]
-                [content-nfa (regex-to-nfa content)])
+                [after-nfa (regex->nfa after)]
+                [content-nfa (regex->nfa content)])
             (nfa-concate before-nfa
                          (match type
                            ['opt (nfa-union content-nfa (make-ε-nfa))]

@@ -48,11 +48,11 @@
 (regex-parser "123(ab)+xyz")
 (regex-parser "123(ab)*xyz")
 
-(define n0 (regex-to-nfa "abc|def|xyz"))
-(define n1 (regex-to-nfa "abc[de]xyz"))
-(define n2 (regex-to-nfa "abc[d|~[e]xyz"))
-(define n3 (regex-to-nfa "a(1)+z"))
-(define n4 (regex-to-nfa "a(1)*z"))
+(define n0 (regex->nfa "abc|def|xyz"))
+(define n1 (regex->nfa "abc[de]xyz"))
+(define n2 (regex->nfa "abc[d|~[e]xyz"))
+(define n3 (regex->nfa "a(1)+z"))
+(define n4 (regex->nfa "a(1)*z"))
 (table->list (n3 'T))
 (table->list (n4 'T))
 
