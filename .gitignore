@@ -166,3 +166,5 @@ pip-log.txt
 *.1
 *.2
 *.bak
+*.dep
+*.zo

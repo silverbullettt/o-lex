@@ -1,1 +1,0 @@
-("5.2.1" ("7639bc20d3a6a34d0f5deedf7d2e0a7fb7ba9561" . "ba44a9cc61de467c9bcc0d7f4a1b54dac1878ee6") (collects #"racket" #"main.rkt") (collects #"errortrace" #"errortrace-key.rkt") #"C:\\Users\\v-titan\\Documents\\GitHub\\o-lex\\table.rkt" #"C:\\Users\\v-titan\\Documents\\GitHub\\o-lex\\nfa.rkt" (collects #"data" #"queue.rkt") (collects #"racket" #"lang" #"reader.rkt"))

@@ -10,7 +10,6 @@
   ; Δ -> a translation relation Q × Σ → Q
   ; q0 -> an initial state
   ; F -> set of acceptable states
-  ; This NFA will work well when input symbols without 'ε'
   (define (next-state q sym)
       (if ((Δ 'lookup) q sym)
           ((Δ 'lookup) q sym)
@@ -58,8 +57,6 @@
         [F (nfa 'F)]
         [dfa-init #f])
     
-    (define (arrange state-set)
-      (sort (remove-duplicates state-set) <))
     (define (next-states q sym)
       (if ((Δ 'lookup) q sym)
           ((Δ 'lookup) q sym)
@@ -100,6 +97,7 @@
         (begin (set! dfa-init (arrange (ε-span (list q0))))
                (enqueue! q dfa-init)
                (convert-iter))))
+    
     (define (state-list->int dfa-t)
       (let ([new-t (make-table 2)]
             [state-map (make-hash)]
@@ -116,6 +114,7 @@
                                              (convert (third kv))))
                          (table->list dfa-t))
                (cons new-t state-map))))
+    
     (let ([dfa-t (car (state-list->int (convert-table)))]
           [state-map (cdr (state-list->int (convert-table)))])
       (make-dfa (hash-values state-map)
