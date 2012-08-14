@@ -29,7 +29,7 @@
     (define (insert-iter! key-list value table)
       (if (= (length key-list) 1)
           (begin (hash-set! table (car key-list) value)
-                 'ok)
+                 value)
           (let ([key (car key-list)])
             (if (hash-has-key? table key)
                 (insert-iter! (cdr key-list) value (hash-ref table key))

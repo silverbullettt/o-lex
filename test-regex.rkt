@@ -1,9 +1,10 @@
 #lang racket
 
-(require "regex-to-nfa.rkt")
+(require "regex-to-nfa.rkt" "table.rkt" "nfa-to-dfa.rkt")
 
-(define n (regex->nfa "[+|-](~d)+[.(~d)+][e[+|-](~d)+[.(~d)+]]"))
+(define n (nfa->dfa (regex->nfa "[+|-](~d)+[.(~d)+][e[+|-](~d)+[.(~d)+]]")))
 (define (t s) ((n 'recog) s))
+
 
 (t "123e456")
 (t "123")

@@ -28,28 +28,25 @@
   (define (next-states q sym)
     (if ((Δ 'lookup) q sym)
         ((Δ 'lookup) q sym)
-        '()))
+        '())) ; use empty list to present unknown states
   (define (accept? states)
     (if (null? (filter (lambda (s) (member s F)) states))
         #f
         #t))
-  (define (ε-span states) 
-    ; deal with ε-moves by span the set of states with which it can reach through 'ε'
-    (remove-duplicates
-     (flatten
-      (map (lambda (s) (cons s (ε-span (next-states s *ε*)))) ; ε-span should be recursive
-           states))))
-  (define (recognize-iter curr-states str)
-    (cond [(null? curr-states) #f]
-          [(= (string-length str) 0) (accept? curr-states)]
-          [else
-           (let ([first-sym (string-ref str 0)]
-                 [rest-sym (substring str 1)])
-             (for/or ([s curr-states])
-               (recognize-iter (ε-span (next-states s first-sym)) ; NOTE: ε-moves cannot be cycle!
-                               rest-sym)))]))
+  (define (ε-span states)
+      ; deal with ε-moves by span the set of states with which it can reach through 'ε'
+      (apply union-append (map (lambda (s) (cons s (ε-span (next-states s *ε*)))) ; ε-span should be recursive
+                               states)))
   (define (recognize str)
-    (if (recognize-iter (ε-span (list q0)) str)
+    (define (recognize-iter curr-states i)
+      (cond [(null? curr-states) #f]
+            [(= (string-length str) i) (accept? curr-states)]
+            [else
+             (let ([c (string-ref str i)])
+               (for/or ([s curr-states])
+                 (recognize-iter (ε-span (next-states s c)) ; NOTE: ε-moves cannot be cycle!
+                                 (+ i 1))))]))
+    (if (recognize-iter (ε-span (list q0)) 0)
         'accept
         'reject))
   
