@@ -3,17 +3,16 @@
 ; TODO list:
 ; 0. design
 ; 1. parse regex
-; 2. meta-character(|,~d,~c,[,],(,),*,+)
-; 3. or(|) OK
+; 2. meta-character(|,~d,~c,(,),*,+,?)
+; 3. or(|) BUG: when '|' is after a special char, something wrong
 ; 4. wildcard(~d,~c) OK
-; 5. optional([]) OK
-; 6. duplication(()*,()+) OK
+; 6. duplication(()*,()+,()?) OK
 ; ------------- all above ok! ----------------
 ; 7. longest matching
 ; 8. token type
 
-(require "nfa.rkt" "table.rkt" "utility.rkt")
-(provide regex-parser regex->nfa)
+(require "nfa.rkt" "nfa-to-dfa.rkt" "table.rkt" "utility.rkt")
+(provide regex-parser regex->nfa regex-matcher)
 
 (define (char-range low high)
   (map integer->char (range (char->integer low)
@@ -23,18 +22,32 @@
 (define *downcase* (char-range #\a #\z))
 (define *upcase* (char-range #\A #\Z))
 (define *alphabet* (append *downcase* *upcase*))
+(define *symbol* (string->list "`~!@#$%^&*()_-+=[]{}|\\,./?;:'\" \t\n"))
 
 (define *wildcard-char* '(#\d #\c))
 (define *wildcard-map* (make-hash '((#\d . digit) (#\c . char))))
-(define (wildcard? c)
-  (if (member c *wildcard-char*) #t #f))
+(define (wildcard? c) (if (member c *wildcard-char*) #t #f))
 
-(define *dup-char* '(#\* #\+))
-(define *dup-map* (make-hash '((#\* . dup0) (#\+ . dup1))))
+(define *dup-char* '(#\* #\+ #\?))
+(define *dup-map* (make-hash '((#\* . zero-or-more)
+                               (#\+ . one-or-more)
+                               (#\? . zero-or-one))))
+(define (dup? c) (if (member c *dup-char*) #t #f))
+
+(define *neg* #\^)
+(define (neg? c) (char=? c *neg*))
 
 (define *escape* #\~)
 (define (escape? c) (char=? c *escape*))
 
+(define *or* #\|)
+(define (or? c) (char=? c *or*))
+
+(define *spec-brac* (string->list "(["))
+(define (spec-brac? c) (if (member c *spec-brac*) #t #f))
+(define *brac-map* (make-hash '((#\( . #\))
+                                (#\[ . #\]))))
+(define (get-rbrac lbrac) (hash-ref *brac-map* lbrac))
 
 (define (make-wildcard-nfa char-list)
   (make-nfa '(0 1)
@@ -45,17 +58,33 @@
             '(1)))
 (define (make-digit-nfa) (make-wildcard-nfa *digit*))
 (define (make-char-nfa) (make-wildcard-nfa *alphabet*))
+(define (make-any-nfa) (make-wildcard-nfa 
+                        (append *digit* *alphabet* *symbol*)))
 
-(define (find-match-bracket str i lbrac rbrac)
-  (let ([str-len (string-length str)])
+(define (make-negchar-nfa char-list)
+  ; make a nfa match any char but which in char-list
+  (let* ([nfa (make-any-nfa)]
+         [init (nfa 'init)]
+         [T (nfa 'T)])
+    (begin
+      (for-each (lambda (c)
+                  ((T 'insert!) init c '()))
+                char-list)
+      (make-nfa (nfa 'S)
+                (remove* char-list (nfa 'alphabet))
+                T
+                init
+                (nfa 'F)))))
+     
+(define (find-match-bracket str i lbrac)
+  (let ([str-len (string-length str)]
+        [rbrac (get-rbrac lbrac)])
     (define (find-iter i deep esc)
       (if (= i str-len)
           -1
           (let ([c (string-ref str i)])
             (cond [(escape? c)
-                   (if esc 
-                       (find-iter (+ i 1) deep #f)
-                       (find-iter (+ i 1) deep #t))]
+                   (find-iter (+ i 1) deep (not esc))]
                   [(char=? c rbrac)
                    (if esc
                        (find-iter (+ i 1) deep #f)
@@ -68,9 +97,25 @@
                    (find-iter (+ i 1) deep #f)]))))
     (find-iter i 0 #f)))
 
+(define (or-regex regex)
+  ; check if the regex is a or-regular expression
+  (let ([regex-len (string-length regex)])
+    (define (iter i esc)
+      (if (= i regex-len)
+          #f
+          (let ([c (string-ref regex i)])
+            (cond
+              [(escape? c) (iter (+ i 1) (not esc))]
+              [esc (iter (+ i 1) #f)]
+              [(spec-brac? c) (iter (+ (find-match-bracket regex i c) 1) esc)]
+              [(or? c) i]
+              [else (iter (+ i 1) esc)]))))
+    (iter 0 #f)))
+
 
 (define (regex-parser regex)
-  (let ([regex-len (string-length regex)])
+  (let ([regex-len (string-length regex)]
+        [or-reg (or-regex regex)]) ; or-reg -> is this regex a or-regexp?
     (define (parse-iter bs i s)
       ; bs -> string before special character
       ; i -> current character index
@@ -81,30 +126,35 @@
               (error 'regex-parser "illegal regular expression -- \"~a\"" regex))
           (let ([c (string-ref regex i)])
             (match c
-              [#\| (match s ; split
-                     ['in-plain
-                      (list 'or (substring regex 0 i) "" (substring regex (+ i 1)))]
-                     ['in-escape
-                      (parse-iter (string-append bs "|") (+ i 1) 'in-plain)])]
-              [#\[ (match s ; left bracket of optional
+              [#\[ (match s ; character set
                      ['in-escape
                       (parse-iter (string-append bs "[") (+ i 1) 'in-plain)]
                      ['in-plain
-                      (let ([mb (find-match-bracket regex i #\[ #\])])
-                        (list 'opt
-                              bs
-                              (substring regex (+ i 1) mb)
-                              (substring regex (+ mb 1))))])]
+                      (let* ([mb (find-match-bracket regex i #\[)]
+                             [type (if (neg? (string-ref regex (+ i 1)))
+                                       'neg-set
+                                       'set)]
+                             [content (if (eq? type 'neg-set)
+                                          (substring regex (+ i 2) mb)
+                                          (substring regex (+ i 1) mb))]
+                             [after (substring regex (+ mb 1))])
+                        (list type bs content after))])]
               [#\( (match s ; left bracket of duplication
                      ['in-escape
                       (parse-iter (string-append bs "(") (+ i 1) 'in-plain)]
                      ['in-plain
-                      (let* ([mb (find-match-bracket regex i #\( #\))]
-                             [dup-char (string-ref regex (+ mb 1))])
-                        (list (hash-ref *dup-map* dup-char)
+                      (let* ([mb (find-match-bracket regex i #\()]
+                             [after (if (or (= mb (- (string-length regex) 1))
+                                            (not (dup? (string-ref regex (+ mb 1)))))
+                                        (substring regex (+ mb 1))
+                                        (substring regex (+ mb 2)))]
+                             [dup-char (if (= mb (- (string-length regex) 1))
+                                           #f
+                                           (string-ref regex (+ mb 1)))])
+                        (list (hash-ref *dup-map* dup-char 'regexp)
                               bs
                               (substring regex (+ i 1) mb)
-                              (substring regex (+ mb 2))))])]
+                              after))])]
               [(? escape?) (match s ; escape
                              ['in-plain
                               (parse-iter bs (+ i 1) 'in-escape)]
@@ -120,7 +170,9 @@
                                         (substring regex (+ i 1)))])]
               [_ 'in-plain
                     (parse-iter (string-append bs (string c)) (+ i 1) s)]))))
-    (parse-iter "" 0 'in-plain)))
+    (if or-reg ; first, check whether the regex is or-regex
+        (list 'or (substring regex 0 or-reg) "" (substring regex (+ or-reg 1)))
+        (parse-iter "" 0 'in-plain))))
 
 (define (regex->nfa regex)
   (match (regex-parser regex)
@@ -128,7 +180,7 @@
        (match type
          ['plain (make-plain-nfa content)]
          ['or
-          (nfa-union (make-plain-nfa before)
+          (nfa-union (regex->nfa before)
                      (regex->nfa after))]
          [else
           (let ([before-nfa (make-plain-nfa before)]
@@ -136,9 +188,37 @@
                 [content-nfa (regex->nfa content)])
             (nfa-concate before-nfa
                          (match type
-                           ['opt (nfa-union content-nfa (make-ε-nfa))]
-                           ['dup0 (nfa-star-closure content-nfa)]
-                           ['dup1 (nfa-positive-closure content-nfa)]
+                           ['regexp content-nfa]
+                           ['zero-or-more (nfa-star-closure content-nfa)]
+                           ['one-or-more (nfa-positive-closure content-nfa)]
+                           ['zero-or-one (nfa-union content-nfa (make-ε-nfa))]
                            ['char (make-char-nfa)]
-                           ['digit (make-digit-nfa)])
+                           ['digit (make-digit-nfa)]
+                           ['set (make-wildcard-nfa (string->list content))]
+                           ['neg-set (make-negchar-nfa (string->list content))])
                          after-nfa))])]))
+
+(define (regex-matcher arg)
+  (let* ([dfa (if (string? arg)
+                  (nfa->dfa (regex->nfa arg))
+                  (nfa->dfa arg))]
+         [T (dfa 'T)]
+         [init (dfa 'init)])
+    (define (accept? s)
+      (if (member s (dfa 'F)) #t #f))
+    (define (match-str str)
+      (define (match-iter stat curr last)
+        (if (= curr (string-length str))
+            (if (accept? stat)
+                (substring str last curr)
+                "-- NO MATCHING --")
+            (let ([next ((T 'lookup) stat (string-ref str curr))])
+              (if (not next)
+                  (cond [(accept? stat) (substring str last curr)]
+                        [(eq? init curr) (match-iter init (+ curr 1) last)]
+                        [else (match-iter init (+ last 1) (+ last 1))])
+                  (if (eq? init stat)
+                      (match-iter next (+ curr 1) curr)
+                      (match-iter next (+ curr 1) last))))))
+      (match-iter init 0 0))
+    match-str))
