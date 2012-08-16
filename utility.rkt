@@ -1,7 +1,8 @@
 #lang racket
 
 (provide range accumulate union-append union-append*
-         string-find-first string-find-last string-empty?)
+         string-find-first string-find-last string-empty?
+         reverse-pair list-intersect?)
 
 (define (accumulate op initial seq)
   (if (null? seq)
@@ -57,3 +58,9 @@
 
 (define (string-empty? str)
   (= (string-length str) 0))
+
+(define (reverse-pair p)
+  (cons (cdr p) (car p)))
+
+(define (list-intersect? lst1 lst2)
+  (not (set-empty? (set-intersect (list->set lst1) (list->set lst2)))))

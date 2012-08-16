@@ -126,6 +126,9 @@
               (error 'regex-parser "illegal regular expression -- \"~a\"" regex))
           (let ([c (string-ref regex i)])
             (match c
+              [#\* (match s
+                     ['in-escape
+                      (parse-iter (string-append bs "*") (+ i 1) 'in-plain)])]
               [#\[ (match s ; character set
                      ['in-escape
                       (parse-iter (string-append bs "[") (+ i 1) 'in-plain)]
@@ -159,7 +162,7 @@
                              ['in-plain
                               (parse-iter bs (+ i 1) 'in-escape)]
                              ['in-escape
-                              (parse-iter (string-append bs "~") (+ i 1) 'in-plain)])]
+                              (parse-iter (string-append bs (string *escape*)) (+ i 1) 'in-plain)])]
               [(? wildcard?) (match s ; wildcard
                                  ['in-plain
                                   (parse-iter (string-append bs (string c)) (+ i 1) s)]
@@ -210,7 +213,7 @@
       (let ([result #f])
         (define (match-iter stat curr last)
           (if (= curr (string-length str))
-              result
+              (if (accept? stat) (substring str last curr) #f)
               (let ([next ((T 'lookup) stat (string-ref str curr))])
                 (begin
                   (if (accept? stat) (set! result (substring str last curr)) '())

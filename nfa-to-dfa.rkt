@@ -40,7 +40,7 @@
       [else (error 'DFA-dispatch "Unknown message ~a~%" m)]))
   dispatch)
 
-(define (nfa->dfa nfa)
+(define (nfa->dfa . args)
   (define (arrange state-set)
     (sort (remove-duplicates state-set) <))
   (define (arrange-table t)
@@ -50,12 +50,13 @@
                                            (arrange (third kv))))
                 (table->list t))
       t))
-  (let ([Q (nfa 'S)]
-        [Σ (nfa 'alphabet)]
-        [Δ (arrange-table (nfa 'T))]
-        [q0 (nfa 'init)]
-        [F (nfa 'F)]
-        [dfa-init #f])
+  (let* ([nfa (car args)]
+         [Q (nfa 'S)]
+         [Σ (nfa 'alphabet)]
+         [Δ (arrange-table (nfa 'T))]
+         [q0 (nfa 'init)]
+         [F (nfa 'F)]
+         [dfa-init #f])
     
     (define (next-states q sym)
       (if ((Δ 'lookup) q sym)
@@ -115,11 +116,12 @@
                          (table->list dfa-t))
                (cons new-t state-map))))
     
-    (let ([dfa-t (car (state-list->int (convert-table)))]
-          [state-map (cdr (state-list->int (convert-table)))])
-      (make-dfa (hash-values state-map)
-                Σ
-                dfa-t
-                (hash-ref state-map dfa-init)
-                (map (lambda (k) (hash-ref state-map k))
-                     (filter accept? (hash-keys state-map)))))))
+    (let* ([dfa-t (car (state-list->int (convert-table)))]
+           [state-map (cdr (state-list->int (convert-table)))]
+           [dfa  (make-dfa (hash-values state-map)
+                           Σ
+                           dfa-t
+                           (hash-ref state-map dfa-init)
+                           (map (lambda (k) (hash-ref state-map k))
+                                (filter accept? (hash-keys state-map))))])
+      (if (= (length args) 1) dfa (list dfa state-map)))))

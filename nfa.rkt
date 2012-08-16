@@ -4,6 +4,7 @@
 (provide *ε* 
          make-trans 
          make-nfa make-empty-nfa make-ε-nfa make-plain-nfa
+         solve-state-collide
          nfa-union nfa-concate
          nfa-star-closure nfa-positive-closure)
 
