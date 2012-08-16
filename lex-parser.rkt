@@ -1,6 +1,6 @@
 #lang racket
 
-(require "regex-to-nfa.rkt"
+(require "regex-parser.rkt"
          "nfa.rkt" "nfa-to-dfa.rkt"
          "table.rkt" "utility.rkt")
 (provide make-lex-parser)

@@ -2,7 +2,7 @@
 
 (provide range accumulate union-append union-append*
          string-find-first string-find-last string-empty?
-         reverse-pair list-intersect?)
+         reverse-pair list-intersect? member-tester)
 
 (define (accumulate op initial seq)
   (if (null? seq)
@@ -64,3 +64,6 @@
 
 (define (list-intersect? lst1 lst2)
   (not (set-empty? (set-intersect (list->set lst1) (list->set lst2)))))
+
+(define (member-tester set)
+  (lambda (x) (if (member x set) #t #f)))
