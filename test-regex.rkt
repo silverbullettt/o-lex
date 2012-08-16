@@ -18,9 +18,6 @@
 (t "123ee12")
 (t "123e")
 (t ".45")
-;(define cmt (regex-matcher "/*([^*]|(*)+[^*/])*(*)+/"))
-(define cmt (regex-matcher (nfa-concate (regex->nfa "/*")
-                                        (nfa-star-closure (nfa-union (regex->nfa "[^*]")
-                                                                     (regex->nfa "(*)+[^*/]")))
-                                        (regex->nfa "(*)+/"))))
+
+(define cmt (regex-matcher "/*([^*]|(*)+[^*/])*(*)+/"))
 (cmt "void /*main**int**/ main(int argc,..*/.)")

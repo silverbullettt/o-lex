@@ -207,18 +207,19 @@
     (define (accept? s)
       (if (member s (dfa 'F)) #t #f))
     (define (match-str str)
-      (define (match-iter stat curr last)
-        (if (= curr (string-length str))
-            (if (accept? stat)
-                (substring str last curr)
-                "-- NO MATCHING --")
-            (let ([next ((T 'lookup) stat (string-ref str curr))])
-              (if (not next)
-                  (cond [(accept? stat) (substring str last curr)]
-                        [(eq? init curr) (match-iter init (+ curr 1) last)]
-                        [else (match-iter init (+ last 1) (+ last 1))])
-                  (if (eq? init stat)
-                      (match-iter next (+ curr 1) curr)
-                      (match-iter next (+ curr 1) last))))))
-      (match-iter init 0 0))
+      (let ([result #f])
+        (define (match-iter stat curr last)
+          (if (= curr (string-length str))
+              result
+              (let ([next ((T 'lookup) stat (string-ref str curr))])
+                (begin
+                  (if (accept? stat) (set! result (substring str last curr)) '())
+                  (if (not next)
+                      (cond [result result]
+                            [(eq? init curr) (match-iter init (+ curr 1) last)]
+                            [else (match-iter init (+ last 1) (+ last 1))])
+                      (if (eq? init stat)
+                          (match-iter next (+ curr 1) curr)
+                          (match-iter next (+ curr 1) last)))))))
+        (match-iter init 0 0)))
     match-str))
