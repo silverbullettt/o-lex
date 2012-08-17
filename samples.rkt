@@ -2,9 +2,7 @@
 
 (require "nfa.rkt" "regex-parser.rkt" "nfa-to-dfa.rkt" "lex-parser.rkt")
 
-(define n (regex->nfa "(~+|-)?~d+(.~d+)?(e(~+|-)?~d+(.~d+)?)?"))
-(define (t s) ((n 'recog) s))
-
+(define t (make-regex-recognizer "(~+|-)?~d+(.~d+)?(e(~+|-)?~d+(.~d+)?)?"))
 
 (t "123e456")
 (t "123")
@@ -19,10 +17,10 @@
 (t "123e")
 (t ".45")
 
-(define cmt (regex-matcher "/~*([^*]|~*+[^*/])*~*+/"))
+(define cmt (make-regex-matcher "/~*([^*]|~*+[^*/])*~*+/"))
 (cmt "void /*main**int**/ main(int argc,..*/.)/*wocao*/")
 
-(define num (regex-matcher "(~+|-)?~d+(.~d+)?(e(~+|-)?~d+(.~d+)?)?"))
+(define num (make-regex-matcher "(~+|-)?~d+(.~d+)?(e(~+|-)?~d+(.~d+)?)?"))
 (num "sdkfhiwuh13242352sdjkvhxcj")
 (num "sdkfhiwuh13242.sdjkvhxcj")
 (num "++13242352.15431")
@@ -50,3 +48,4 @@
 (lp "put()")
 (lp "write(x)")
 (lp "x = 123; output(x); x = input()")
+

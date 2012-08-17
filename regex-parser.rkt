@@ -12,7 +12,8 @@
 ; 8. token type
 
 (require "nfa.rkt" "nfa-to-dfa.rkt" "table.rkt" "utility.rkt")
-(provide regex-parser regex->nfa regex-matcher)
+(provide regex-parser regex->nfa
+         make-regex-recognizer make-regex-matcher)
 
 (define (char-range low high)
   (map integer->char (range (char->integer low)
@@ -229,7 +230,11 @@
                                 ['digit (make-digit-nfa)]))])
                          after-nfa))])]))
 
-(define (regex-matcher arg)
+(define (make-regex-recognizer regex)
+  (let ([nfa (regex->nfa regex)])
+    (nfa 'recog)))
+
+(define (make-regex-matcher arg)
   (let* ([dfa (if (string? arg)
                   (nfa->dfa (regex->nfa arg))
                   (nfa->dfa arg))]
