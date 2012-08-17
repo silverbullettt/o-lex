@@ -239,22 +239,25 @@
       (if (member s (dfa 'F)) #t #f))
     (define (match-str str)
       (let ([result #f])
+        (define (reset-result-and-iter start)
+          (let ([mat result])
+            (begin (set! result #f)
+                   (cons (cons mat start)
+                         (match-iter init
+                                     (+ start (string-length mat))
+                                     (+ start (string-length mat)))))))
         (define (match-iter stat index start)
           (if (= index (string-length str))
-              (if (accept? stat) (cons (substring str start index) start) '())
+              (if (accept? stat) (list (cons (substring str start index) start)) '())
               (let ([next ((T 'lookup) stat (string-ref str index))])
                 (begin
                   (if (accept? stat) (set! result (substring str start index)) '())
                   (if (not next)
-                      (cond [result (cons result start)]
+                      (cond [result (reset-result-and-iter start)]
                             [(eq? init index) (match-iter init (+ index 1) start)]
                             [else (match-iter init (+ start 1) (+ start 1))])
                       (if (eq? init stat)
                           (match-iter next (+ index 1) index)
                           (match-iter next (+ index 1) start)))))))
-        (match (match-iter init 0 0)
-          [(cons mat start)
-           (begin (set! result #f)
-                  (cons (cons mat start) (match-iter init (+ start (string-length mat)) 0)))]
-          ['() #f])))
+        (match-iter init 0 0)))
     match-str))
