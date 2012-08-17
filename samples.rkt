@@ -39,7 +39,7 @@
                               ("input" input)
                               ("output" output))))
 
-(lp "x = 123 + y")
+(lp "x = 123 + y;\noutput(x);")
 (lp "x = 123.89 + 456")
 (lp "x = 123+456")
 (lp "inpu")

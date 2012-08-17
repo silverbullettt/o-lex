@@ -57,21 +57,34 @@
        (define (next-state s c) (((dfa 'T) 'lookup) s c))
        (define (accept? s) (if (member s (dfa 'F)) #t #f))
        (define (token-type s) (hash-ref token-map s))
-       (define (parse-iter stat index tok)
+       (define (newline? c) (char=? c #\newline))
+       
+       (define (parse-iter stat index tok line-nr offset)
          (if (= index (string-length str))
-             (list (cons (token-type stat) tok))
+             (list (list (token-type stat)
+                         tok
+                         line-nr
+                         (- index offset (string-length tok))))
              (let* ([c (string-ref str index)]
                     [next (next-state stat c)])
                (if (not next)
                    (cond [(accept? stat)
-                          (cons (cons (token-type stat) tok)
-                                (parse-iter init index ""))]
+                          (cons (list (token-type stat)
+                                      tok
+                                      line-nr
+                                      (- index offset (string-length tok)))
+                                (parse-iter init index "" line-nr offset))]
+                         [(and (eq? stat init) (newline? c))
+                          (parse-iter init (+ index 1) "" (+ line-nr 1) index)]
                          [(and (eq? stat init) (char-whitespace? c))
-                          (parse-iter init (+ index 1) "")]
+                          (parse-iter init (+ index 1) "" line-nr offset)]
                          [else
                           (error 'lex-parser "Unknown token: \"~a\" on '~a'~%" tok c)])
                    (parse-iter next
                                (+ index 1)
-                               (string-append tok (string c)))))))
-       (parse-iter init 0 ""))
+                               (string-append tok (string c))
+                               line-nr
+                               offset)))))
+       
+       (parse-iter init 0 "" 1 -1))
      parse]))
