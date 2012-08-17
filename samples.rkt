@@ -45,7 +45,3 @@
 (lp "inpu")
 (lp "input")
 (lp "input1")
-(lp "put()")
-(lp "write(x)")
-(lp "x = 123; output(x); x = input()")
-
