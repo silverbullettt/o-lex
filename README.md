@@ -1,8 +1,8 @@
-# O-lex (**O**riginal **Lex**ical parser)
+# O-lex (__O__riginal __Lex__ical parser)
 
   
 ## **O-lex是什么？**
-o-lex是一个由*[DrRacket][0]*编写，可用正则表达式描述词法规则的词法分析器。目前仅支持的一些基本的正则表达式模式，但足以描述词法规则。
+o-lex是一个由_[DrRacket][0]_编写，可用正则表达式描述词法规则的词法分析器。目前仅支持的一些基本的正则表达式模式，但足以描述词法规则。
 
 [0]: http://racket-lang.org/ "DrRacket"
 ## **正则表达式语法**
@@ -21,7 +21,7 @@ o-lex是一个由*[DrRacket][0]*编写，可用正则表达式描述词法规则
 
 #### **数量限定**
 - **+**：表示前面的字符（或模式）可出现一次或多次，如“Micro+soft”可匹配“Microsoft”和“Microoooosoft”
-- ***：表示前面的字符（或模式）可出现零次或多次，如“~c*”可匹配空串和任意英文单词
+- __\*__：表示前面的字符（或模式）可出现零次或多次，如“~c*”可匹配空串和任意英文单词
 - **?**：表现前面的字符（或模式）可出现零次或一次，如“(+|-)?~d+”可表示任意有符号整数和无符号整数
 
 #### **特殊字符**
@@ -39,8 +39,8 @@ o-lex是一个由*[DrRacket][0]*编写，可用正则表达式描述词法规则
 
 `make-lex-parser`接受词法规则，返回一个词法解析器，该解析器接受字符串，返回单词流。返回参数中包含单词类型、单词本身、所在行号以及在该行的偏移。
 
-**`(make-regex-recognizer regex)`**，[regex-parser.rkt][regex]  
-**`(make-regex-matcher regex)`**，[regex-parser.rkt][regex]  
+__`(make-regex-recognizer regex)`__，[regex-parser.rkt][regex]  
+__`(make-regex-matcher regex)`__，[regex-parser.rkt][regex]  
 作为用正则表达式表示词法规则的副产品，o-lex还包含一个正则表达式的识别器和匹配器。前者可识别一个字符串是否符合给定的表达式；后者从一个字符串中找出符合表达式的所有串，并给出它们的起始位置。
 
 [lex]: https://github.com/silverbullettt/o-lex/blob/master/lex-parser.rkt "lex-parser.rkt"
@@ -50,7 +50,7 @@ o-lex是一个由*[DrRacket][0]*编写，可用正则表达式描述词法规则
 ## **示例**
 1. 用`make-regex-recognizer`构造一个能识别一个字符串是否符合yyyy-MM-dd格式日期识别器
 <pre><code>
-\>) (**define** data (make-regex-recognizer "~d~d~d~d-[01]~d-[0123]~d"))
+\> (**define** data (make-regex-recognizer "~d~d~d~d-[01]~d-[0123]~d"))
 \> (data "2012-08-18")
 'accept
 \> (data "2012.12.21")
@@ -66,9 +66,9 @@ o-lex是一个由*[DrRacket][0]*编写，可用正则表达式描述词法规则
 
 3. 用`make-lex-parser`构造词法分析器，并识别出代码中的词素
 <pre><code>
-\>(**define** lp (make-lex-parser '(("(`_`|~c)(_|~c|~d)`*`" id)
+\>(**define** lp (make-lex-parser '(("(\_|~c)(_|~c|~d)、*" id)
 	                               ("~d+" num)
-                                   ("\"[^\"]*\"" string)
+                                   ("\"[^\"]\*\"" string)
                                    ("~+" plus)
                                    ("=" assign)
                                    ("~(" lbrac)
@@ -98,4 +98,4 @@ o-lex是一个由*[DrRacket][0]*编写，可用正则表达式描述词法规则
 
 哦还有一个问题，`make-lex-parser` 的第一个参数是个列表，在这个列表中越靠后的词法规则优先级越高，所以关键字都必须放在id这种通配符规则的后面。这个bug影响不大，我也懒得解决了。
 
-最后一个问题，不要跨行。有两种词素是可能跨行的，*块注释*和*字符串*，o-lex目前搞不定这两种词素，它们如果出现会导致后序词素行号出错。所以使用o-lex的时候就不要定义块注释，也不要整跨行字符串……
+最后一个问题，不要跨行。有两种词素是可能跨行的，_块注释_和_字符串_，o-lex还搞不定这两种词素，它们如果出现会导致后序词素行号出错。所以使用o-lex的时候就不要定义块注释，也不要整跨行字符串。目前o-lex不支持从文件中读入，不过这个问题很快就会解决……
