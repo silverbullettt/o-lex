@@ -1,8 +1,8 @@
-# O-lex (__O__riginal __Lex__ical parser)
+# O-lex
 
   
 ## **O-lex是什么？**
-o-lex是一个由[DrRacket][0]编写，可用正则表达式描述词法规则的词法分析器。目前仅支持的一些基本的正则表达式模式，但足以描述词法规则。
+o-lex (**O**riginal **LEX**xical parser)是一个由[DrRacket][0]编写，可用正则表达式描述词法规则的词法分析器。目前仅支持的一些基本的正则表达式模式，但足以描述词法规则。
 
 [0]: http://racket-lang.org/ "DrRacket"
 ## **正则表达式语法**
