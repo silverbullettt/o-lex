@@ -69,7 +69,7 @@ o-lex (**O**riginal **LEX**xical parser)是一个由[DrRacket][0]编写，可用
 <pre><code>
 \>(**define** lp (make-lex-parser '(("(\_|~c)(_|~c|~d)、*" id)
 	                               ("~d+" num)
-                                   `("\"[^\"]*\"" string)`
+                                  `("\"[^\"]*\"" string)`
                                    ("~+" plus)
                                    ("=" assign)
                                    ("~(" lbrac)
