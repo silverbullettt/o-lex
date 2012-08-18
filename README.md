@@ -67,7 +67,7 @@ o-lex (**O**riginal **LEX**xical parser)是一个由[DrRacket][0]编写，可用
 
 3. 用`make-lex-parser`构造词法分析器，并识别出代码中的词素
 <pre><code>
-\>(**define** lp (make-lex-parser '(("(\_|~c)(_|~c|~d)、*" id)
+\>(**define** lp (make-lex-parser '(("(\_|~c)(_|~c|~d)*" id)
 	                               ("~d+" num)
                                   `("\"[^\"]*\"" string)`
                                    ("~+" plus)
