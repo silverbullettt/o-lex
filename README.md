@@ -21,7 +21,7 @@ o-lex是一个由[DrRacket][0]编写，可用正则表达式描述词法规则�
 
 #### **数量限定**
 - **+**：表示前面的字符（或模式）可出现一次或多次，如“Micro+soft”可匹配“Microsoft”和“Microoooosoft”
-- **\***：表示前面的字符（或模式）可出现零次或多次，如“~c*”可匹配空串和任意英文单词
+- __\*__：表示前面的字符（或模式）可出现零次或多次，如“~c*”可匹配空串和任意英文单词
 - **?**：表现前面的字符（或模式）可出现零次或一次，如“(+|-)?~d+”可表示任意有符号整数和无符号整数
 
 #### **特殊字符**
@@ -39,8 +39,8 @@ o-lex是一个由[DrRacket][0]编写，可用正则表达式描述词法规则�
 
 `make-lex-parser`接受词法规则，返回一个词法解析器，该解析器接受字符串，返回单词流。返回参数中包含单词类型、单词本身、所在行号以及在该行的偏移。
 
-**`(make-regex-recognizer regex)`** ，[regex-parser.rkt][regex]  
-**`(make-regex-matcher regex)`** ，[regex-parser.rkt][regex]
+** `(make-regex-recognizer regex)` ** ，[regex-parser.rkt][regex]  
+** `(make-regex-matcher regex)` ** ，[regex-parser.rkt][regex]
 
 作为用正则表达式表示词法规则的副产品，o-lex还包含一个正则表达式的识别器和匹配器。前者可识别一个字符串是否符合给定的表达式；后者从一个字符串中找出符合表达式的所有串，并给出它们的起始位置。
 
