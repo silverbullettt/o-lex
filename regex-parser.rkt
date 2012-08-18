@@ -7,9 +7,9 @@
 ; 3. or(|) BUG: when '|' is after a special char, something wrong
 ; 4. wildcard(~d,~c) OK
 ; 6. duplication(()*,()+,()?) OK
+; 7. longest matching OK
+; 8. token type OK
 ; ------------- all above ok! ----------------
-; 7. longest matching
-; 8. token type
 
 (require "nfa.rkt" "nfa-to-dfa.rkt" "table.rkt" "utility.rkt")
 (provide regex-parser regex->nfa
@@ -85,17 +85,17 @@
           -1
           (let ([c (string-ref str i)])
             (cond [(escape? c)
-                   (find-iter (+ i 1) deep (not esc))]
+                   (find-iter (add1 i) deep (not esc))]
                   [(char=? c rbrac)
                    (if esc
-                       (find-iter (+ i 1) deep #f)
-                       (if (= deep 1) i (find-iter (+ i 1) (- deep 1) #f)))]
+                       (find-iter (add1 i) deep #f)
+                       (if (= deep 1) i (find-iter (add1 i) (sub1 deep) #f)))]
                   [(char=? c lbrac)
                    (if esc
-                       (find-iter (+ i 1) deep #f)
-                       (find-iter (+ i 1) (+ deep 1) #f))]
+                       (find-iter (add1 i) deep #f)
+                       (find-iter (add1 i) (+ deep 1) #f))]
                   [else
-                   (find-iter (+ i 1) deep #f)]))))
+                   (find-iter (add1 i) deep #f)]))))
     (find-iter i 0 #f)))
 
 (define (or-regex regex)
@@ -106,11 +106,11 @@
           #f
           (let ([c (string-ref regex i)])
             (cond
-              [(escape? c) (iter (+ i 1) (not esc))]
-              [esc (iter (+ i 1) #f)]
+              [(escape? c) (iter (add1 i) (not esc))]
+              [esc (iter (add1 i) #f)]
               [(spec-brac? c) (iter (+ (find-match-bracket regex i c) 1) esc)]
               [(or? c) i]
-              [else (iter (+ i 1) esc)]))))
+              [else (iter (add1 i) esc)]))))
     (iter 0 #f)))
 
 
@@ -129,20 +129,19 @@
             (define (look-forward-dup)
               ; just invoked in escape, and c must be meta character
               (let ([next-c
-                     (if (= i (- regex-len 1)) #f (string-ref regex (+ i 1)))])
+                     (if (= i (- regex-len 1)) #f (string-ref regex (add1 i)))])
                 (if (dup? next-c)
                     (list (hash-ref *dup-map* next-c)
                           bs
                           (string *escape* c)
                           (substring regex (+ i 2)))
-                    (parse-iter (string-append bs (string c)) (+ i 1) 'in-plain))))
+                    (parse-iter (string-append bs (string c)) (add1 i) 'in-plain))))
             (match c
               [(? escape?) (match s ; escape
-                             ['in-plain (parse-iter bs (+ i 1) 'in-escape)]
+                             ['in-plain (parse-iter bs (add1 i) 'in-escape)]
                              ['in-escape (look-forward-dup)])]
               [(? dup?) (match s ; duplcation
                           ['in-escape (look-forward-dup)]
-                           ; (parse-iter (string-append bs (string c)) (+ i 1) 'in-plain)]
                           [else
                            (if (string-empty? bs)
                                (error "Fuck!")
@@ -150,21 +149,20 @@
                              (list (hash-ref *dup-map* c)
                                    (substring bs 0 (- bs-len 1))
                                    (substring bs (- bs-len 1) bs-len)
-                                   (substring regex (+ i 1)))))])]
+                                   (substring regex (add1 i)))))])]
               [(? wildcard?) (match s ; wildcard
                                  ['in-plain (look-forward-dup)]
-                                  ;(parse-iter (string-append bs (string c)) (+ i 1) s)]
                                  ['in-escape
                                   (if (and (not (= i (- (string-length regex) 1)))
-                                           (dup? (string-ref regex (+ i 1))))
-                                      (list (hash-ref *dup-map* (string-ref regex (+ i 1)))
+                                           (dup? (string-ref regex (add1 i))))
+                                      (list (hash-ref *dup-map* (string-ref regex (add1 i)))
                                             bs
-                                            (substring regex (- i 1) (+ i 1))
+                                            (substring regex (- i 1) (add1 i))
                                             (substring regex (+ i 2)))
                                       (list (hash-ref *wildcard-map* c)
                                             bs
                                             ""
-                                            (substring regex (+ i 1))))])]
+                                            (substring regex (add1 i))))])]
               [#\[ (match s ; character set
                      ['in-escape (look-forward-dup)]
                      ['in-plain
@@ -175,12 +173,12 @@
                                   bs
                                   (substring regex i (+ mb 1))
                                   (substring regex (+ mb 2)))
-                            (let* ([type (if (neg? (string-ref regex (+ i 1)))
+                            (let* ([type (if (neg? (string-ref regex (add1 i)))
                                              'neg-set
                                              'set)]
                                    [content (if (eq? type 'neg-set)
                                                 (substring regex (+ i 2) mb)
-                                                (substring regex (+ i 1) mb))]
+                                                (substring regex (add1 i) mb))]
                                    [after (substring regex (+ mb 1))])
                               (list type bs content after))))])]
               [#\( (match s ; left bracket of duplication
@@ -196,10 +194,10 @@
                                            (string-ref regex (+ mb 1)))])
                         (list (hash-ref *dup-map* dup-char 'regexp)
                               bs
-                              (substring regex (+ i 1) mb)
+                              (substring regex (add1 i) mb)
                               after))])]
               [else 'in-plain
-                    (parse-iter (string-append bs (string c)) (+ i 1) s)]))))
+                    (parse-iter (string-append bs (string c)) (add1 i) s)]))))
     (if or-reg ; first, check whether the regex is or-regex
         (list 'or (substring regex 0 or-reg) "" (substring regex (+ or-reg 1)))
         (parse-iter "" 0 'in-plain))))
@@ -253,16 +251,16 @@
                                      (+ start (string-length mat)))))))
         (define (match-iter stat index start)
           (if (= index (string-length str))
-              (if (accept? stat) (list (cons (substring str start index) start)) '())
+              (if result (list (cons result start)) '())
               (let ([next ((T 'lookup) stat (string-ref str index))])
                 (begin
                   (if (accept? stat) (set! result (substring str start index)) '())
                   (if (not next)
                       (cond [result (reset-result-and-iter start)]
-                            [(eq? init index) (match-iter init (+ index 1) start)]
-                            [else (match-iter init (+ start 1) (+ start 1))])
+                            [(eq? init index) (match-iter init (add1 index) start)]
+                            [else (match-iter init (add1 start) (add1 start))])
                       (if (eq? init stat)
-                          (match-iter next (+ index 1) index)
-                          (match-iter next (+ index 1) start)))))))
+                          (match-iter next (add1 index) index)
+                          (match-iter next (add1 index) start)))))))
         (match-iter init 0 0)))
     match-str))

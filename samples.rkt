@@ -26,20 +26,27 @@
 (num "++13242352.15431")
 (newline)
 
+(define cmt-filter 'comment)
 
 ; latter rule has higher priority- -
-(define lp (make-lex-parser '(("write" write)
+(define lp (make-lex-parser '(("//[^\n]*" comment)
                               ("(_|~c)(_|~c|~d)*" id)
                               ("(~+|-)?~d+(.~d+)?(e(~+|-)?~d+(.~d+)?)?" num)
+                              ("\"[^\"]*\"" string)
                               ("~+" plus)
                               ("=" assign)
                               ("~(" lbrac)
                               (")" rbrac)
                               (";" semi)
                               ("input" input)
-                              ("output" output))))
+                              ("output" output))
+                            'comment
+                            'string))
 
-(lp "x = 123 + y;\noutput(x);")
+(lp "x = 123 + y;
+output(x); \"a string\"// this is a comment
+input(); s = \"hello,world.\"
+\"another string\"")
 (lp "x = 123.89 + 456")
 (lp "x = 123+456")
 (lp "inpu")

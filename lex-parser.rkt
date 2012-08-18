@@ -20,7 +20,7 @@
       ((t 'insert!) new-init *ε* (list (N1 'init) (N2 'init)))
       (make-nfa new-S new-alphabet t new-init new-F))))
 
-(define (make-lex-parser regex-list)
+(define (make-parser regex-list)
   (define (iter-union regex-list result token-map)
     ; regex-list -> list of regex and token type pair
     ; result -> result nfa
@@ -61,10 +61,12 @@
        
        (define (parse-iter stat index tok line-nr offset)
          (if (= index (string-length str))
-             (list (list (token-type stat)
+             (if (not (eq? stat init))
+                 (list (list (token-type stat)
                          tok
                          line-nr
                          (- index offset (string-length tok))))
+                 '())
              (let* ([c (string-ref str index)]
                     [next (next-state stat c)])
                (if (not next)
@@ -75,16 +77,40 @@
                                       (- index offset (string-length tok)))
                                 (parse-iter init index "" line-nr offset))]
                          [(and (eq? stat init) (newline? c))
-                          (parse-iter init (+ index 1) "" (+ line-nr 1) index)]
+                          (parse-iter init (add1 index) "" (add1 line-nr) index)]
                          [(and (eq? stat init) (char-whitespace? c))
-                          (parse-iter init (+ index 1) "" line-nr offset)]
+                          (parse-iter init (add1 index) "" line-nr offset)]
                          [else
                           (error 'lex-parser "Unknown token: \"~a\" on '~a'~%" tok c)])
                    (parse-iter next
-                               (+ index 1)
+                               (add1 index)
                                (string-append tok (string c))
                                line-nr
                                offset)))))
        
        (parse-iter init 0 "" 1 -1))
      parse]))
+
+(define (make-comment-filter comment-tag)
+  (lambda (tokens)
+    (filter-not (lambda (tok-msg)
+                  (eq? (first tok-msg) comment-tag))
+                tokens)))
+
+(define (make-string-joiner str-tag)
+  (lambda (tokens)
+    (map (lambda (tok)
+           (if (eq? (first tok) str-tag)
+               (let ([str [second tok]])
+                 (list (first tok)
+                       (substring str 1 (sub1 (string-length str)))
+                       (third tok)
+                       (fourth tok)))
+               tok))
+         tokens)))
+
+(define (make-lex-parser regex-list [cmt-tag #f] [str-tag #f])
+  (let ([parser (make-parser regex-list)]
+        [str-proc (if str-tag (make-string-joiner str-tag) values)]
+        [cmt-proc (if cmt-tag (make-comment-filter cmt-tag) values)])
+    (lambda (str) (cmt-proc (str-proc (parser str))))))

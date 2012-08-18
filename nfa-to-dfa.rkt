@@ -1,6 +1,6 @@
 #lang racket
 
-(require "table.rkt" "nfa.rkt")
+(require "table.rkt" "nfa.rkt" "utility.rkt")
 (require data/queue)
 (provide make-dfa nfa->dfa)
 
@@ -24,7 +24,7 @@
             [else (recognize-iter
                    (next-state curr-state
                                (string-ref str i))
-                   (+ i 1))]))
+                   (add1 i))]))
     (if (recognize-iter q0 0)
         'accept
         'reject))
@@ -104,7 +104,7 @@
             [state-map (make-hash)]
             [counter 0])
         (define (inc)
-          (begin (set! counter (+ counter 1)) counter))
+          (begin (set! counter (add1 counter)) counter))
         (define (convert set)
           (if (hash-has-key? state-map set)
               (hash-ref state-map set)

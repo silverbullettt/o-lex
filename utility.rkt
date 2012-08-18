@@ -2,7 +2,8 @@
 
 (provide range accumulate union-append union-append*
          string-find-first string-find-last string-empty?
-         reverse-pair list-intersect? member-tester)
+         reverse-pair list-intersect? list-join member-tester
+         add-n add1 sub1)
 
 (define (accumulate op initial seq)
   (if (null? seq)
@@ -45,7 +46,7 @@
     (define (find-iter k)
       (cond [(= k str-len) -1]
             [(char=? (string-ref str k) char) k]
-            [else (find-iter (+ k 1))]))
+            [else (find-iter (add1 k))]))
     (find-iter 0)))
 
 (define (string-find-last str char)
@@ -53,7 +54,7 @@
     (define (find-iter k)
       (cond [(= k -1) -1]
             [(char=? (string-ref str k) char) k]
-            [else (find-iter (- k 1))]))
+            [else (find-iter (sub1 k))]))
     (find-iter (- str-len 1))))
 
 (define (string-empty? str)
@@ -65,5 +66,18 @@
 (define (list-intersect? lst1 lst2)
   (not (set-empty? (set-intersect (list->set lst1) (list->set lst2)))))
 
+(define (list-join join? proc lst)
+  (cond [(null? lst) '()]
+        [(= (length lst) 1) lst]
+        [(and (join? (first lst))
+              (join? (second lst)))
+         (cons (proc (first lst) (second lst)) (cddr lst))]
+        [else (cons (car lst)
+                    (list-join join? proc (cdr lst)))]))
+
 (define (member-tester set)
   (lambda (x) (if (member x set) #t #f)))
+
+(define (add-n n) (lambda (x) (+ x n)))
+(define add1 (add-n 1))
+(define sub1 (add-n -1))

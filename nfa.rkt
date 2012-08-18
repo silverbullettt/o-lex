@@ -46,7 +46,7 @@
              (let ([c (string-ref str i)])
                (for/or ([s curr-states])
                  (recognize-iter (ε-span (next-states s c)) ; NOTE: ε-moves cannot be cycle!
-                                 (+ i 1))))]))
+                                 (add1 i))))]))
     (if (recognize-iter (ε-span (list q0)) 0)
         'accept
         'reject))
@@ -90,8 +90,8 @@
   ; compose a new state machine, which isomorphism with B
   ; but all states in new machine will not interact with A
   ; Note: all states in NFA are integers
-  (let* ([new-Q (range (+ (apply max (A 'S)) 1)
-                       (+ (+ (apply max (A 'S)) 1) (length (B 'S))))]
+  (let* ([new-Q (range (add1 (apply max (A 'S)))
+                       (+ (add1 (apply max (A 'S))) (length (B 'S))))]
          [state-map (make-hash (map cons (B 'S) new-Q))]
          [t (make-trans)])
     (define (convert old-state)
@@ -117,9 +117,8 @@
   ; union two NFAs
   ; add a new init state, and set ε-moves to the NFAs initial states
   (let* ([new-N2 (solve-state-collide N1 N2)] ; 
-         [new-init (+ (max (apply max (N1 'S))
-                           (apply max (new-N2 'S)))
-                      1)]
+         [new-init (add1 (max (apply max (N1 'S))
+                           (apply max (new-N2 'S))))]
          [new-S (cons new-init (append (N1 'S) (new-N2 'S)))]
          [new-alphabet (union-append (N1 'alphabet) (new-N2 'alphabet))]
          [new-t (new-N2 'T)]
