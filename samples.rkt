@@ -31,7 +31,7 @@
 ; latter rule has higher priority- -
 (define lp (make-lex-parser '(("//[^\n]*" comment)
                               ("(_|~c)(_|~c|~d)*" id)
-                              ("(~+|-)?~d+(.~d+)?(e(~+|-)?~d+(.~d+)?)?" num)
+                              ("~d+(.~d+)?(e(~+|-)?~d+(.~d+)?)?" num)
                               ("\"[^\"]*\"" string)
                               ("~+" plus)
                               ("=" assign)
@@ -48,7 +48,7 @@ output(x); \"a string\"// this is a comment
 input(); s = \"hello,world.\"
 \"another string\"")
 (lp "x = 123.89 + 456")
-(lp "x = 123+456")
+(lp "x = 1 + 2;output(x);")
 (lp "inpu")
 (lp "input")
 (lp "input1")
