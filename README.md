@@ -72,7 +72,7 @@ o-lex (**O**riginal **LEX**xical parser)是一个由[DrRacket][0]编写，可用
         '(("~d+" number)
           ("~c+" ident)
           ("~(" \() (")" \))
-          ("~+" +) ("-" -) ("~*" *) ("/" /)
+          ("~+" +) ("-" -) ("~\*" \*) ("/" /)
           ("=" =) ("#" \#) ("<" <) ("<=" <=) (">" >) (">=" >=) ("ODD" odd)
           ("," comma) (";" semi) (":=" assign) ("." period)
           ("CONST" const) ("VAR" var)
@@ -80,64 +80,59 @@ o-lex (**O**riginal **LEX**xical parser)是一个由[DrRacket][0]编写，可用
           ("BEGIN" begin) ("END" end)
           ("IF" if) ("THEN" then)
           ("WHILE" while) ("DO" do))))
-
-(**define** src  
-"VAR x, squ;
- 
+(**define** src
+"VAR x, squ; 
 PROCEDURE square;  
 BEGIN
-	squ := x * x
-END;
- 
+      squ := x * x
+END;   
 BEGIN
-   x := 1;
-   WHILE x <= 10 DO
-   BEGIN
-      CALL square;
-      x := x + 1
-   END
-END.")
-
-(PL/0-lex-parser src)  
-  
-\>'((var "VAR" 1 1)  
-  (ident "x" 1 5)  
+      x := 1;
+      WHILE x <= 10 DO
+      BEGIN
+        CALL square;
+        x := x + 1
+      END
+END.")  
+\>(PL/0-lex-parser src)
+\>'((var "VAR" 1 1)
+  (ident "x" 1 5)
   (comma "," 1 6)
-  (ident "squ" 1 8)  
-  (semi ";" 1 11)  
-  (proc "PROCEDURE" 3 1)  
-  (ident "square" 3 11)  
-  (semi ";" 3 17)  
-  (begin "BEGIN" 4 1)  
-  (ident "squ" 5 4)  
-  (assign ":=" 5 8)  
-  (ident "x" 5 11)  
-  (* "*" 5 13)  
-  (ident "x" 5 15)  
-  (end "END" 6 1)  
-  (semi ";" 6 4)  
-  (begin "BEGIN" 8 1)  
-  (ident "x" 9 4)  
-  (assign ":=" 9 6)  
-  (number "1" 9 9)  
-  (semi ";" 9 10)  
-  (while "WHILE" 10 4)  
-  (ident "x" 10 10)  
-  (<= "<=" 10 12)  
-  (number "10" 10 15)  
-  (do "DO" 10 18)  
-  (begin "BEGIN" 11 4)  
-  (call "CALL" 12 7)  
-  (ident "square" 12 12)  
-  (semi ";" 12 18)  
-  (ident "x" 13 7)  
-  (assign ":=" 13 9)  
-  (ident "x" 13 12)  
-  (+ "+" 13 14)  
-  (number "1" 13 16)  
-  (end "END" 14 4)  
-  (end "END" 15 1)  
-  (period "." 15 4))  
+  (ident "squ" 1 8)
+  (semi ";" 1 11)
+  (proc "PROCEDURE" 3 1)
+  (ident "square" 3 11)
+  (semi ";" 3 17)
+  (begin "BEGIN" 4 1)
+  (ident "squ" 5 4)
+  (assign ":=" 5 8)
+  (ident "x" 5 11)
+  (* "*" 5 13)
+  (ident "x" 5 15)
+  (end "END" 6 1)
+  (semi ";" 6 4)
+  (begin "BEGIN" 8 1)
+  (ident "x" 9 4)
+  (assign ":=" 9 6)
+  (number "1" 9 9)
+  (semi ";" 9 10)
+  (while "WHILE" 10 4)
+  (ident "x" 10 10)
+  (<= "<=" 10 12)
+  (number "10" 10 15)
+  (do "DO" 10 18)
+  (begin "BEGIN" 11 4)
+  (call "CALL" 12 7)
+  (ident "square" 12 12)
+  (semi ";" 12 18)
+  (ident "x" 13 7)
+  (assign ":=" 13 9)
+  (ident "x" 13 12)
+  (+ "+" 13 14)
+  (number "1" 13 16)
+  (end "END" 14 4)
+  (end "END" 15 1)
+  (period "." 15 4))
 
 
 </pre></code>
