@@ -2,8 +2,7 @@
 
 (provide range accumulate union-append union-append*
          string-find-first string-find-last string-empty?
-         reverse-pair list-intersect? list-join member-tester
-         add-n add1 sub1)
+         reverse-pair list-intersect? list-join member-tester)
 
 (define (accumulate op initial seq)
   (if (null? seq)
@@ -77,7 +76,3 @@
 
 (define (member-tester set)
   (lambda (x) (if (member x set) #t #f)))
-
-(define (add-n n) (lambda (x) (+ x n)))
-(define add1 (add-n 1))
-(define sub1 (add-n -1))
