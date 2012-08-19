@@ -65,29 +65,81 @@ o-lex (**O**riginal **LEX**xical parser)是一个由[DrRacket][0]编写，可用
 '(("21" . 4) ("-123.45" . 26) ("6.02e23" . 62))
 </pre></code>
 
-3. 用`make-lex-parser`构造词法分析器，并识别出代码中的词素
+3. 用`make-lex-parser`构造PL/0的词法分析器，并识别出代码中的词素
 <pre><code>
-\>(**define** lp (make-lex-parser '(("(\_|~c)(_|~c|~d)*" id)
-	                               ("~d+" num)
-                                  `("\"[^\"]*\"" string)`
-                                   ("~+" plus)
-                                   ("=" assign)
-                                   ("~(" lbrac)
-                                   (")" rbrac)
-                                   (";" semi)
-						           ("output" output))))
-\>(lp (lp "x = 123+456;\noutput(x);")
-'((id "x" 1 1)
-      (assign "=" 1 3)
-      (num "123" 1 5)
-      (plus "+" 1 8)
-      (num "456" 1 9)
-      (semi ";" 1 12)
-      (output "output" 2 1)
-      (lbrac "(" 2 7)
-      (id "x" 2 8)
-      (rbrac ")" 2 9)
-      (semi ";" 2 10))
+(**define** PL/0-lex-parser
+       (make-lex-parser 
+        '(("~d+" number)
+          ("~c+" ident)
+          ("~(" \() (")" \))
+          ("~+" +) ("-" -) ("~*" *) ("/" /)
+          ("=" =) ("#" \#) ("<" <) ("<=" <=) (">" >) (">=" >=) ("ODD" odd)
+          ("," comma) (";" semi) (":=" assign) ("." period)
+          ("CONST" const) ("VAR" var)
+          ("PROCEDURE" proc) ("CALL" call)
+          ("BEGIN" begin) ("END" end)
+          ("IF" if) ("THEN" then)
+          ("WHILE" while) ("DO" do))))
+
+(**define** src  
+"VAR x, squ;
+ 
+PROCEDURE square;  
+BEGIN
+	squ := x * x
+END;
+ 
+BEGIN
+   x := 1;
+   WHILE x <= 10 DO
+   BEGIN
+      CALL square;
+      x := x + 1
+   END
+END.")
+
+(PL/0-lex-parser src)  
+  
+\>'((var "VAR" 1 1)  
+  (ident "x" 1 5)  
+  (comma "," 1 6)
+  (ident "squ" 1 8)  
+  (semi ";" 1 11)  
+  (proc "PROCEDURE" 3 1)  
+  (ident "square" 3 11)  
+  (semi ";" 3 17)  
+  (begin "BEGIN" 4 1)  
+  (ident "squ" 5 4)  
+  (assign ":=" 5 8)  
+  (ident "x" 5 11)  
+  (* "*" 5 13)  
+  (ident "x" 5 15)  
+  (end "END" 6 1)  
+  (semi ";" 6 4)  
+  (begin "BEGIN" 8 1)  
+  (ident "x" 9 4)  
+  (assign ":=" 9 6)  
+  (number "1" 9 9)  
+  (semi ";" 9 10)  
+  (while "WHILE" 10 4)  
+  (ident "x" 10 10)  
+  (<= "<=" 10 12)  
+  (number "10" 10 15)  
+  (do "DO" 10 18)  
+  (begin "BEGIN" 11 4)  
+  (call "CALL" 12 7)  
+  (ident "square" 12 12)  
+  (semi ";" 12 18)  
+  (ident "x" 13 7)  
+  (assign ":=" 13 9)  
+  (ident "x" 13 12)  
+  (+ "+" 13 14)  
+  (number "1" 13 16)  
+  (end "END" 14 4)  
+  (end "END" 15 1)  
+  (period "." 15 4))  
+
+
 </pre></code>
 
 
@@ -99,4 +151,4 @@ o-lex (**O**riginal **LEX**xical parser)是一个由[DrRacket][0]编写，可用
 
 哦还有一个问题，`make-lex-parser` 的第一个参数是个列表，在这个列表中越靠后的词法规则优先级越高，所以关键字都必须放在id这种通配符规则的后面。这个bug影响不大，我也懒得解决了。
 
-最后一个问题，不要跨行。有两种词素是可能跨行的，_块注释_ 和 _字符串_ ，o-lex还搞不定这两种词素，它们如果出现会导致后序词素行号出错。所以使用o-lex的时候就不要定义块注释，也不要整跨行字符串。目前o-lex不支持从文件中读入，不过这个问题很快就会解决……
+最后一个问题，不要跨行。有两种词素是可能跨行的，_块注释_ 和 _字符串_ ，o-lex还搞不定这两种词素，它们如果出现会导致后序词素行号出错。所以使用o-lex的时候就不要定义块注释，也不要整跨行字符串……
