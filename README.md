@@ -51,19 +51,19 @@ o-lex (**O**riginal **LEX**xical parser)是一个由[DrRacket][0]编写，可用
 ## **示例**
 1. 用`make-regex-recognizer`构造一个能识别一个字符串是否符合yyyy-MM-dd格式日期识别器
 <pre><code>
-\> (**define** data (make-regex-recognizer "~d~d~d~d-[01]~d-[0123]~d"))
-\> (data "2012-08-18")
+> (**define** data (make-regex-recognizer "~d~d~d~d-[01]~d-[0123]~d"))
+> (data "2012-08-18")
 'accept
-\> (data "2012.12.21")
+> (data "2012.12.21")
 'reject
-</pre></code>
+</code></pre>
 
 2. 用`make-regex-matcher	`提取出字符串中的数字
 <pre><code>
-\>(**define** num (make-regex-matcher "(~+|-)?~d+(.~d+)?(e(~+|-)?~d+(.~d+)?)?"))
-\> (num "I'm 21 years old, I have $-123.45, Avogadro's constant equals 6.02e23.")
+>(**define** num (make-regex-matcher "(~+|-)?~d+(.~d+)?(e(~+|-)?~d+(.~d+)?)?"))
+> (num "I'm 21 years old, I have $-123.45, Avogadro's constant equals 6.02e23.")
 '(("21" . 4) ("-123.45" . 26) ("6.02e23" . 62))
-</pre></code>
+</code></pre>
 
 3. 用`make-lex-parser`构造PL/0的词法分析器，并识别出代码中的词素
 <pre><code>
@@ -135,7 +135,7 @@ END.")
   (period "." 15 4))
 
 
-</pre></code>
+</code></pre>
 
 
 
